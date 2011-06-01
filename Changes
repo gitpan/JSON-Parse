@@ -1,0 +1,10 @@
+0.05
+
+This removes unistd.h dependency for compiling on Windows.
+
+0.04 / 2011-05-30
+
+This removes json_parse_grammar.tab.h and json_parse_lexer.h from
+being included in json_parse.c in order to enable compilation on Perl
+5.8.9.
+
