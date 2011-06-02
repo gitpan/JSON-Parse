@@ -17,6 +17,7 @@ typedef enum {
     json_parse_no_input_fail,
     json_parse_bad_start_fail,
     json_parse_unknown_escape_fail,
+    json_parse_number_fail,
     json_parse_n_statuses,
 } 
 json_parse_status;
@@ -66,24 +67,18 @@ typedef struct {
     json_parse_u_data ud;
     /* The end-result of the parsing. */
     json_parse_u_obj parse_result;
-    /* The status of the parser at the end of parsing. */
-    json_parse_status js;
     /* Holder for the flex scanner. */
     void * scanner;
     /* Buffer for reading strings in Flex. */
-    struct {
-        size_t size;
-        size_t length;
-        char * chrs;
-    } buffer;
+    buffer_t buffer;
 }
 json_parse_object;
 
 #endif
 
+#include "lexer.h"
 #include "json_parse.h"
 #include "json_parse_grammar.tab.h"
-#include "json_parse_lexer.h"
 
 const char * json_parse_status_messages[json_parse_n_statuses] = {
     "OK",
@@ -97,12 +92,13 @@ const char * json_parse_status_messages[json_parse_n_statuses] = {
     "input was empty",
     "the text did not start with { or [ as it should have",
     "met an unknown escape sequence (backslash \\ + character)",
+    "there was an unparseable number in the input",
 };
 
 /* This declares the parsing function in
    "json_parse_grammar.tab.c". */
 
-int json_parse_parse (json_parse_object * jpo);
+int json_parse_parse (const char ** json_ptr, json_parse_object * jpo);
 
 /* With the reentrant parser, it is necessary to initialize the
    buffers which are in jpo->scanner. This also sets the value of
@@ -110,34 +106,35 @@ int json_parse_parse (json_parse_object * jpo);
 
 void json_parse_init (json_parse_object * jpo)
 {
-    json_parse_lex_lex_init (& jpo->scanner);
-    json_parse_lex_set_extra (jpo, jpo->scanner);
 }
 
 /* This is the main entry point of the routine. */
 
-int json_parse (json_parse_object * jpo)
+int json_parse (const char ** json, json_parse_object * jpo)
 {
     int parser_status;
-    parser_status = json_parse_parse (jpo);
+    jpo->buffer.status = json_parse_ok;
+    parser_status = json_parse_parse (json, jpo);
     return parser_status;
 }
 
 void json_parse_free (json_parse_object * jpo)
 {
-    if (jpo->buffer.chrs) {
-        free (jpo->buffer.chrs);
+    if (jpo->buffer.value) {
+        free (jpo->buffer.value);
     }
-    json_parse_lex_lex_destroy (jpo->scanner);
 }
 
 /* This is the error handler required by yacc/bison. What it does is
    to correctly set the error status in the user's object. The client
    of this parser then decides what to do about the error. */
 
-int json_parse_error (json_parse_object * jpo_x, const char * message)
+int json_parse_error (const char ** json_ptr, json_parse_object * jpo_x, const char * message)
 {
-    if (jpo_x->js == json_parse_ok)
-	jpo_x->js = json_parse_grammar_fail;
+    /*
+    printf ("parse error %d.\n", jpo_x->buffer.status);
+    */
+    if (jpo_x->buffer.status == json_parse_ok)
+	jpo_x->buffer.status = json_parse_grammar_fail;
     return 0;
 }

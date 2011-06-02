@@ -6,6 +6,7 @@
 
 #include "ppport.h"
 
+#include "lexer.h"
 #include "json_parse.h"
 #include "json_argo.h"
 
@@ -172,10 +173,7 @@ json_argo_parse (json_parse_object * jpo, SV * json_sv)
         return & PL_sv_undef;
     }
     json_bytes = SvPV (json_sv, json_length);
-    /* This is yy_scan_string but with the name changed from yy to
-       json_parse_lex_. */
-    json_parse_lex__scan_string (json_bytes, jpo->scanner);
-    status = json_parse (jpo);
+    status = json_parse (& json_bytes, jpo);
     if (status == json_parse_ok) {
         if (jpo->parse_result) {
             return jpo->parse_result;
@@ -209,56 +207,12 @@ json_argo_to_perl (SV * json_sv)
     };
     SV * r;
 
+    //    json_argo_data.verbose = 1;
     json_parse_init (& jpo);
 
     r = json_argo_parse (& jpo, json_sv);
     json_parse_free (& jpo);
     return r;
-}
-
-void *
-json_argo_init ()
-{
-    json_argo_t * json_argo_data;
-    json_parse_object * jpo;
-    json_parse_object jpo_init = {
-        json_argo_string_create,
-        json_argo_string_create,
-        json_argo_array_create,
-        json_argo_hash_create,
-        json_argo_ntf_create,
-        json_argo_array_push,
-        json_argo_hash_add,
-    };
-
-    jpo = malloc (sizeof (json_parse_object));
-    json_argo_data = calloc (1, sizeof (json_argo_data));
-
-    (*jpo) = jpo_init;
-    jpo->ud = json_argo_data;
-    json_parse_init (jpo);
-    return jpo;
-}
-
-SV *
-json_argo_to_perl_recycle (void * vjpo, SV * json_sv)
-{
-    json_parse_object * jpo;
-    SV * r;
-
-    jpo = vjpo;
-    r = json_argo_parse (jpo, json_sv);
-    return r;
-}
-
-void
-json_argo_delete (void * vjpo)
-{
-    json_parse_object * jpo;
-    jpo = vjpo;
-    json_parse_free (jpo);
-    free (jpo->ud);
-    free (jpo);
 }
 
 /*             _ _     _       _   _             
@@ -314,10 +268,7 @@ json_argo_valid_parse (json_parse_object * jpo, SV * json_sv)
     json_parse_status status;
     int json_length;
     json_bytes = SvPV (json_sv, json_length);
-    /* This is yy_scan_string but with the name changed from yy to
-       json_parse_lex_. */
-    json_parse_lex__scan_string (json_bytes, jpo->scanner);
-    status = json_parse (jpo);
+    status = json_parse (& json_bytes, jpo);
     return ! status;
 }
 

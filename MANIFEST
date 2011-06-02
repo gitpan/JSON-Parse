@@ -5,15 +5,15 @@ json_parse.c
 json_parse.h
 json_parse_grammar.tab.c
 json_parse_grammar.tab.h
-json_parse_lexer.c
-json_parse_lexer.h
+lexer.c
+lexer.h
 lib/JSON/Parse.pm
 Makefile.PL
 MANIFEST			This list of files
 ppport.h
 t/JSON-Parse.t
+t/test-errors.t
 src/json_parse_grammar.y
-src/json_parse_lex.l
 unicode.c
 unicode.h
 Changes

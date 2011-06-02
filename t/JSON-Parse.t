@@ -7,10 +7,8 @@ use utf8;
 
 binmode STDOUT, ":utf8";
 my $jason = '{"bog":"log","frog":[1,2,3],"guff":{"x":"y","z":"monkey","t":[0,1,2.3,4,59999]}}';
-print "Parsing '$jason'\n";
 my $x = gub ($jason);
 ok ($x->{guff}->{t}->[2] == 2.3, "Two point three");
-print "Finished.\n";
 
 my $fleece = '{"凄い":"技", "tickle":"baby"}';
 my $y = gub ($fleece);
@@ -28,10 +26,10 @@ ok (valid_json ($argonauts), "Valid OK JSON");
 
 my $p = json_to_perl (undef);
 ok (! defined $p, "Undef returns undef");
-ok (! valid_json (undef), "! Valid bad JSON");
+ok (! valid_json (undef), "! Valid undef");
 my $Q = json_to_perl ('');
 ok (! defined $Q, "Empty string returns undef");
-ok (! valid_json (''), "! Valid bad JSON");
+ok (! valid_json (''), "! Valid empty string");
 my $n;
 eval {
 $n = '{"骪":"\u9aaa"';
@@ -39,9 +37,9 @@ my $nar = json_to_perl ($n);
 };
 ok ($@, "found error");
 ok ($@ =~ /not grammatically correct/, "Error message OK");
-ok (! valid_json ($n), "! Valid bad JSON");
+ok (! valid_json ($n), "! Not valid missing end }");
 my $m = '{"骪":"\u9aaa"}';
-my $ar = json_to_perl ($m);
+my $ar = gub ($m);
 ok (defined $ar, "Unicode \\uXXXX parsed");
 ok ($ar->{骪} eq '骪', "Unicode \\uXXXX parsed correctly");
 ok (valid_json ($m), "Valid good JSON");
@@ -50,13 +48,13 @@ eval {
     json_to_perl ($bad1);
 };
 ok ($@, "found error in '$bad1'");
-ok ($@ =~ /did not start/, "Error message as expected");
+ok ($@ =~ /did not start/, "Error message $@ as expected");
 my $notjson = 'this is not lexable';
 eval {
     json_to_perl ($notjson);
 };
 ok ($@, "Got error message");
-ok ($@ =~ /stray characters/i, "unlexable message OK");
+ok ($@ =~ /stray characters/i, "unlexable message $@ OK");
 ok (! valid_json ($notjson), "Not valid bad json");
 
 my $wi =<<EOF;
@@ -84,8 +82,8 @@ my $wi =<<EOF;
      ]
  }
 EOF
-my $xi = json_to_perl ($wi);
-ok ($xi->{address}->{postalCode} eq '10021', "Test a value");
+my $xi = gub ($wi);
+ok ($xi->{address}->{postalCode} eq '10021', "Test a value $xi->{address}->{postalCode}");
 ok (valid_json ($wi), "Validate");
 
 done_testing ();
@@ -94,6 +92,7 @@ exit;
 sub gub
 {
     my ($json) = @_;
+#    print "Processing $json\n";
     my $p = json_to_perl ($json);
 #    print "$p\n";
 # Uncommend this to bugger things up

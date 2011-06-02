@@ -43,7 +43,8 @@
      true = 260,
      false = 261,
      null = 262,
-     eof = 263
+     eof = 263,
+     error_initial = 264
    };
 #endif
 
@@ -54,7 +55,7 @@ typedef union YYSTYPE
 {
 
 /* Line 1685 of yacc.c  */
-#line 76 "json_parse_grammar.y"
+#line 79 "json_parse_grammar.y"
 
     json_parse_u_obj	  uo;
     json_parse_u_obj 	  uo_pair[2];
@@ -63,7 +64,7 @@ typedef union YYSTYPE
 
 
 /* Line 1685 of yacc.c  */
-#line 67 "json_parse_grammar.tab.h"
+#line 68 "json_parse_grammar.tab.h"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */

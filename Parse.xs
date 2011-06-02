@@ -4,6 +4,7 @@
 
 #include "ppport.h"
 
+#include "lexer.h"
 #include "json_parse.h"
 #include "json_argo.h"
 
@@ -22,20 +23,4 @@ CODE:
 RETVAL = json_argo_valid_json (json);
 OUTPUT:
 RETVAL
-
-void * argo_init ()
-CODE:
-RETVAL = json_argo_init ();
-OUTPUT:
-RETVAL
-
-SV * json_to_perl_recycle (void * argo, SV * json)
-CODE:
-RETVAL = json_argo_parse ((json_parse_object *) argo, json);
-OUTPUT:
-RETVAL
-
-void argo_delete (void * argo)
-CODE:
-json_argo_delete (argo);
 

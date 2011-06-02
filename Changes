@@ -1,6 +1,11 @@
+0.06
+
+Ended use of flex, replaced with "lexer.c".
+
 0.05
 
-This removes unistd.h dependency for compiling on Windows.
+Removal of unistd.h dependency for compiling on Windows.
+Name change from JSON::Argo to JSON::Parse.
 
 0.04 / 2011-05-30
 

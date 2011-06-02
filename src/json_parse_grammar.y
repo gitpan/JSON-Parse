@@ -5,16 +5,17 @@
 %{
 
 #include <stdlib.h>
+#include <stdio.h>
 
 /* The option below gives this the prefix "json_parse_" but the lexer
    has the prefix "json_parse_lex_". The following define sends the
    compiler to the correct yylex function. */
 
-#define json_parse_lex json_parse_lex_lex
+#define json_parse_lex lexer
 
+#include "lexer.h"
 #include "json_parse.h"
 #include "json_parse_grammar.tab.h"
-#include "json_parse_lexer.h"
 
 #define CALL(f) json_parse_status js; js = (*jpo_x->f)
 #define CALL2(f) js = (*jpo_x->f)
@@ -22,7 +23,7 @@
 /* Check the return value from a call to a */
 
 #define CHK if (js != json_parse_ok) {          \
-        jpo_x->js = js;                         \
+        jpo_x->buffer.status = js;              \
         return 1;                               \
     }
 
@@ -35,7 +36,7 @@
 #if 0
 #define MESSAGE(x, args...) {                                   \
         printf ("%s:%d: ", __FILE__, __LINE__ );                \
-        printf ("status: %d ", json_parse_global_jpo->js);      \
+        printf ("status: %d ", jpo_x->buffer.status);      \
         printf (x, ## args);                                    \
         printf ("\n");                                          \
     }
@@ -43,19 +44,19 @@
 #define MESSAGE(x, args...)
 #endif
 
-#define FAIL(status) {                                                  \
-        MESSAGE("%s", #status);                                         \
+#define FAIL(status_value) {                                            \
+        MESSAGE("%s", #status_value);                                   \
         /* Check that there is not already an error message */          \
-        if (jpo_x->js == json_parse_ok) {                               \
-            jpo_x->js = json_parse_ ## status ## _fail;                 \
+        if (jpo_x->buffer.status == json_parse_ok) {                    \
+            jpo_x->buffer.status = json_parse_ ## status_value ## _fail; \
         }                                                               \
-        return jpo_x->js;                                               \
+        return jpo_x->buffer.status;                                    \
     }
 
 /* The reentrant lexer needs to use allocated memory to hold its
 information. The "scanner" member of "jpo_x" is that information. */
 
-#define scanner jpo_x->scanner
+#define jpo_x_buffer (& jpo_x->buffer)
 
 %}
 
@@ -65,11 +66,13 @@ information. The "scanner" member of "jpo_x" is that information. */
 
 /* Arguments passed in to this function. */
 
+%parse-param {const char ** json_ptr}
 %parse-param {json_parse_object * jpo_x}
 
 /* Arguments passed out to the lexer. */
 
-%lex-param {void * scanner}
+%lex-param {const char ** json_ptr}
+%lex-param {buffer_t * jpo_x_buffer}
 
 /* This holds one "word" in the grammar. */
 
@@ -87,6 +90,7 @@ information. The "scanner" member of "jpo_x" is that information. */
 %token false
 %token null
 %token eof
+%token error_initial
 %type <uo> json
 %type <uo> object
 %type <uo> array
@@ -100,10 +104,10 @@ information. The "scanner" member of "jpo_x" is that information. */
 
 json:	object eof              { MESSAGE ("json=object");
                                   jpo_x->parse_result = $$;
-                                  return jpo_x->js; }
+                                  return jpo_x->buffer.status; }
 	| array eof  		{ MESSAGE ("json=array");
                                   jpo_x->parse_result = $$;
-                                  return jpo_x->js; }
+                                  return jpo_x->buffer.status; }
           /* Error handlers */
         | eof                   { FAIL (no_input); }
         | chars                 { FAIL (bad_start); }
@@ -119,7 +123,7 @@ _pairs:	/* empty */		{ CALL(object_create)(UD, & $$); CHK }
 
 _pair:	string ':' _value	{ $$[0] = $1; $$[1] = $3; }
 
-string: chars                   { CALL(string_create)(UD, $1, & $$); CHK }
+string: chars                   { CALL(string_create)(UD, jpo_x_buffer->value, & $$); CHK }
 
 array:	'[' _list ']'		{ $$ = $2; }
 
@@ -128,8 +132,8 @@ _list:	/* empty */		{ CALL(array_create)(UD, & $$); CHK }
 	  			  CALL2(array_add)(UD, $$, $1); CHK }
 	| _list ',' _value	{ CALL(array_add)(UD, $1, $3); CHK; $$ = $1; }
 
-_value:	chars	    		{ CALL(string_create)(UD, $1, & $$); CHK }
-	| number	    	{ CALL(number_create)(UD, $1, & $$); CHK }
+_value:	chars	    		{ CALL(string_create)(UD, jpo_x_buffer->value, & $$); CHK }
+	| number	    	{ CALL(number_create)(UD, jpo_x_buffer->value, & $$); CHK }
 	| object
 	| array
 	| true			{ CALL(ntf_create)(UD, json_true, & $$); CHK }

@@ -1,10 +1,10 @@
 package JSON::Parse;
 require Exporter;
 @ISA = qw(Exporter);
-@EXPORT_OK = qw/json_to_perl valid_json argo_init argo_delete json_to_perl_recycle/;
+@EXPORT_OK = qw/json_to_perl valid_json/;
 use warnings;
 use strict;
-our $VERSION = 0.05;
+our $VERSION = 0.06;
 use XSLoader;
 XSLoader::load 'JSON::Parse', $VERSION;
 
@@ -31,6 +31,7 @@ Convert JSON (JavaScript Object Notation) into Perl.
 
 =head2 valid_json
 
+    use JSON::Parse 'valid_json';
     if (valid_json ($json)) {
         # do something
     }
@@ -38,8 +39,13 @@ Convert JSON (JavaScript Object Notation) into Perl.
 This function returns 1 if its argument is valid JSON and 0 if its
 argument is not valid JSON.
 
+L</valid_json> does not create any Perl data structures
+and thus uses no memory, and it runs about two or three times faster
+than L</json_to_perl>.
+
 =head2 json_to_perl
 
+    use JSON::Parse 'json_to_perl';
     my $perl = json_to_perl ('{"x":1, "y":2}');
 
 This function converts JSON into a Perl structure. 
@@ -72,7 +78,8 @@ JSON strings are mapped to Perl scalars as strings.
 JSON escape characters (see page five of L</RFC 4267>) are mapped to
 the equivalent ASCII character before they are passed to Perl. Unicode
 escape characters of the form \uXXXX (see page three of L</RFC 4267>)
-are mapped to UTF-8 octets.
+are mapped to UTF-8 octets. This is done regardless of what input
+encoding might be used.
 
 If the input to L</json_to_perl> is marked as Unicode characters, the
 output strings will be marked as Unicode characters. If the input is
@@ -150,9 +157,14 @@ a fully-formed JSON string including opening and closing brackets.
 
 =item UTF-8 only
 
-JSON::Parse only parses text in the UTF-8 format. This is a restriction
-on the permissible bytes of the input text and is regardless of
-whether Perl thinks that the text is in UTF-8 format.
+JSON::Parse is only designed to parse bytes which are in the UTF-8
+format. This is regardless of whether Perl thinks that the text is in
+UTF-8 format (whether Perl has set its utf8 flag for the string). If
+the input is in a different encoding than UTF-8-encoded Unicode, it is
+suggested that the user converts the input before handing it to this
+module. The Perl language already provides very extensive facilities
+for transforming encodings in the L<Encode> module, so there seems
+little point in this module duplicating them.
 
 =back
 
@@ -174,10 +186,15 @@ The author of this module has no idea whether JSON floating point
 numbers are invariably understood by Perl (see L</JSON numbers>
 above).
 
-=item Line numbers
+=item Number matching imperfections
 
-The line numbers in error messages are broken since switching to a
-reentrant parser.
+The number matching algorithm in this module is likely to accept some
+things which aren't numbers, like 000...111....333, as numbers.
+
+=item Error messages don't specify where
+
+The error messages don't specify where in the JSON string the error
+occurred.
 
 =back
 
@@ -207,13 +224,16 @@ The module may produce the following error messages:
 
 =item met an unknown escape sequence (backslash \ + character)
 
+=item there was an unparseable number in the input
+
 =back
 
 The above error messages are in the file F<json_parse.c> in the top
-level of the distribution.
+level of the distribution. The "callback routine failed" and "out of
+memory" errors are unlikely to occur in normal usage.
 
-Errors are fatal, so to continue after an error occurs, put the
-parsing into an C<eval> block:
+Parsing errors are fatal, so to continue after an error occurs, put
+the parsing into an C<eval> block:
 
     my $p;                       
     eval {                       
@@ -238,23 +258,20 @@ L<http://www.ietf.org/rfc/rfc4627.txt>.
 =head1 HOW IT WORKS
 
 JSON::Parse is based on a parser written in C. The C parser makes use
-of the utilities Bison and Flex. The C parser is reentrant, in other
-words thread-safe.
+of the utility Bison. The C parser is reentrant, in other words
+thread-safe.
 
 =head2 Performance
 
-In comparison to other JSON modules on CPAN, the module author's tests
-indicate that JSON::Parse is about fifty times faster than L<JSON::PP>
-and about half as fast as L<JSON::XS> at reading JSON. Tests indicate
-that the module spends most of its time in the lexer, and it probably
-isn't possible to get much of a speed increase above what JSON::Parse
-provides with a Bison/Flex-based parser, so users who require higher
-speed parsing should either use JSON::XS or consider rewriting the
-lexer part of this module so as not to use Flex.
+The module author's tests indicate that L</json_to_perl> extracts a
+structure from a string several times faster than using Perl's C<eval
+$string>.
 
-In comparison to Perl itself, the module author's tests indicate that
-JSON::Parse extracts a structure from a string somewhat faster than
-using Perl's own C<eval> in the form C<eval $string>.
+Compared to other popular modules on CPAN, the speed of
+L</json_to_perl>, according to the module author's tests is about a
+hundred times faster than L<JSON::PP> and roughly comparable to
+L<JSON::XS>. 
+
 
 =head2 History
 
@@ -266,19 +283,26 @@ including comments, and without obfuscation. The original project has
 been modified in order to make the parser reentrant and has grown over
 the intended number of lines of code.
 
-The module was previously known as JSON::Argo. The name was changed to
-JSON::Parse because, unknown to this module's author, there was
-already a JSON parser called Argo written in Java.
+The module was previously known as JSON::Argo. With version 0.05, the
+name was changed to JSON::Parse because, unknown to this module's
+author, there was already a JSON parser called Argo written in Java.
+
+Version 0.06 moved from using a Flex lexer to a C lexer in order to
+increase the speed of the module, to be competitive with L<JSON::XS>.
+
+=head1 EXPORTS
+
+The module exports nothing by default. Functions L</json_to_perl> and
+L</valid_json> can be exported on request.
 
 =head1 SOURCES
 
-C files in the distribution are the outputs of the "bison" and "flex"
-programs. The original inputs to the "bison" and "flex" programs may
-be found in the directory "src" of the distribution. These are not
-necessary to build the Perl module. The user does not need to have
-installed either "bison" or "flex" to build this module. These inputs
-are included in the distribution to comply with the requirements of
-the GNU General Public License.
+One of the C files in the distribution is the output of the "bison"
+program. The original input to the "bison" program may be found in the
+directory "src" of the distribution. The user does not need to have
+installed "bison" to build this module. The bison input is included in
+the distribution to comply with the requirements of the GNU General
+Public License.
 
 =head1 AUTHOR
 
