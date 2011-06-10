@@ -1,17 +1,12 @@
 use JSON::Parse qw/json_to_perl valid_json/;
 use warnings;
 use strict;
-use Test::More tests => 4;
+use Test::More tests => 3;
 eval {
     json_to_perl ("noquote");
 };
 ok ($@ =~ /stray characters/);
 #print "1: $@\n";
-eval {
-    json_to_perl ("{-bajunga}");
-};
-ok ($@ =~ /unparseable number/);
-#print "2: $@\n";
 
 eval {
     json_to_perl ("[\"\\u932P\"]");

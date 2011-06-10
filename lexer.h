@@ -9,7 +9,7 @@
 
 /* From `lexer.c': */
 
-#line 106 "lexer.c"
+#line 118 "lexer.c"
 typedef struct buffer {
     char * value;
     int characters;
@@ -18,10 +18,10 @@ typedef struct buffer {
     int  status;
 } 
 
-#line 114 "lexer.c"
+#line 126 "lexer.c"
 buffer_t;
 
-#line 196 "lexer.c"
+#line 209 "lexer.c"
 int lexer (void * ignore , const char ** json_ptr , buffer_t * b );
 
 #endif /* CFH_LEXER_H */

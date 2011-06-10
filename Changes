@@ -1,3 +1,8 @@
+0.07 / 2011-06-10
+
+Error messages now give line and byte number.
+Removed -O for Windows compilation.
+
 0.06
 
 Ended use of flex, replaced with "lexer.c".

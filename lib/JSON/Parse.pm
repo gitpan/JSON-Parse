@@ -4,7 +4,7 @@ require Exporter;
 @EXPORT_OK = qw/json_to_perl valid_json/;
 use warnings;
 use strict;
-our $VERSION = 0.06;
+our $VERSION = 0.07;
 use XSLoader;
 XSLoader::load 'JSON::Parse', $VERSION;
 
@@ -23,7 +23,7 @@ JSON::Parse - Convert JSON into a Perl variable
     use JSON::Parse 'json_to_perl';
     my $json = '["golden", "fleece"]';
     my $perl = json_to_perl ($json);
-    # Same as if $perl = ['golden', 'fleece'];
+    # Same effect as $perl = ['golden', 'fleece'];
 
 Convert JSON (JavaScript Object Notation) into Perl.
 
@@ -36,12 +36,11 @@ Convert JSON (JavaScript Object Notation) into Perl.
         # do something
     }
 
-This function returns 1 if its argument is valid JSON and 0 if its
-argument is not valid JSON.
+This function returns I<1> if its argument is valid JSON and I<0> if
+its argument is not valid JSON.
 
-L</valid_json> does not create any Perl data structures
-and thus uses no memory, and it runs about two or three times faster
-than L</json_to_perl>.
+L</valid_json> does not create any Perl data structures, and it runs
+about two or three times faster than L</json_to_perl>.
 
 =head2 json_to_perl
 
@@ -61,7 +60,7 @@ the input JSON text is a serialized object or a serialized array.
 
 =head3 Mapping from JSON to Perl
 
-The following mapping is done from JSON to Perl:
+JSON elements are mapped to Perl as follows:
 
 =over
 
@@ -184,23 +183,27 @@ undefined value. "true" is mapped to the string "true".
 
 The author of this module has no idea whether JSON floating point
 numbers are invariably understood by Perl (see L</JSON numbers>
-above).
+above). Most integer and floating point numbers encountered should be
+OK.
 
-=item Number matching imperfections
+=item Number parsing may be slow
 
-The number matching algorithm in this module is likely to accept some
-things which aren't numbers, like 000...111....333, as numbers.
+The number parsing is handled using the Bison grammar in
+F<json_parse_grammar.y> so it might be slower than it could be. This
+is a speculation which has not been tested in practice.
 
-=item Error messages don't specify where
+=item Line numbers are off by one
 
-The error messages don't specify where in the JSON string the error
-occurred.
+The line numbers in the error messages are off by one (line 1 is line
+0).
 
 =back
 
 =head1 DIAGNOSTICS
 
-The module may produce the following error messages:
+The function L</valid_json> does not produce error messages. The
+function L</json_to_perl> may produce the following fatal error
+messages:
 
 =over
 
@@ -227,6 +230,9 @@ The module may produce the following error messages:
 =item there was an unparseable number in the input
 
 =back
+
+Error messages are accompanied by the line number and the byte number
+of the input which caused the problem.
 
 The above error messages are in the file F<json_parse.c> in the top
 level of the distribution. The "callback routine failed" and "out of

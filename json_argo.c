@@ -22,12 +22,12 @@ json_argo_t;
 
 /* Debugging messages. */
 
-#define MESSAGE(format, args...) {                      \
-        if (data->verbose) {                            \
-            printf ("%s:%d: ", __FILE__, __LINE__);     \
-            printf (format, ##args);                    \
-            printf ("\n");                              \
-        }                                               \
+#define MESSAGE(...) {                                       \
+        if (data->verbose) {                                 \
+            printf ("%s:%d: ", __FILE__, __LINE__);          \
+            printf ("" __VA_ARGS__);                         \
+            printf ("\n");                                   \
+        }                                                    \
     }
 
 static json_parse_status
@@ -160,6 +160,7 @@ SV *
 json_argo_parse (json_parse_object * jpo, SV * json_sv)
 {
     const char * json_bytes;
+    const char * json_start;
     json_parse_status status;
     int json_length;
     if (SvUTF8 (json_sv)) {
@@ -172,7 +173,8 @@ json_argo_parse (json_parse_object * jpo, SV * json_sv)
     if (! SvOK (json_sv)) {
         return & PL_sv_undef;
     }
-    json_bytes = SvPV (json_sv, json_length);
+    json_start = SvPV (json_sv, json_length);
+    json_bytes = json_start;
     status = json_parse (& json_bytes, jpo);
     if (status == json_parse_ok) {
         if (jpo->parse_result) {
@@ -186,7 +188,9 @@ json_argo_parse (json_parse_object * jpo, SV * json_sv)
         return & PL_sv_undef;
     }
     else {
-        croak ("Parsing failed: %s", json_parse_status_messages[status]);
+        croak ("Parsing failed: %s at line %d, byte %d",
+               json_parse_status_messages[status],
+               jpo->buffer.line, json_bytes - json_start);
         return & PL_sv_undef;
     }
 }

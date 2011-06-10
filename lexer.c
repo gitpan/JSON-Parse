@@ -24,26 +24,36 @@
 
 #define GRAMMAR \
     '{':        \
+ case '}':      \
  case '[':      \
  case ']':      \
- case '}':      \
  case ':':      \
  case ','
 
-#define START_NUMBER \
-    '1':             \
- case '2':           \
- case '3':           \
- case '4':           \
- case '5':           \
- case '6':           \
- case '7':           \
- case '8':           \
+#define NUMBER_GRAMMAR \
+    '.':               \
+ case '-':             \
+ case '+':             \
+ case '0'
+
+#define DIGIT19                                      \
+    '1':                                             \
+ case '2':                                           \
+ case '3':                                           \
+ case '4':                                           \
+ case '5':                                           \
+ case '6':                                           \
+ case '7':                                           \
+ case '8':                                           \
  case '9'
 
-#define DIGIT                                   \
-    START_NUMBER:                               \
-    case '0'
+#define EXP            \
+    'e':               \
+ case 'E'
+
+#define DIGIT                                      \
+    '0':                                           \
+ case DIGIT19
 
 #define abcdef                                    \
     'a':                                          \
@@ -62,16 +72,19 @@
  case 'F'
 
 #define STATE(x)                                \
+    MESSAGE("state is now %s.\n", #x);          \
     x:                                          \
     c = * p;                                    \
     p++;                                        \
     switch (c) {                                \
  case 0:                                        \
+ MESSAGE ("End of file.\n");                    \
  return FILEEND;                               
 
 #define PUSH p--
 
 #define GOT(x)                                  \
+    MESSAGE("Got %c.\n", x);                   \
     *json_ptr = p;                              \
     return x;
 
@@ -80,7 +93,6 @@
     GOT(x)
 
 #define STRING chars
-#define NUMBER number
 #define FILEEND eof
 #define ERROR_INITIAL json_parse_lex_fail
 #define ERROR_HEX json_parse_unicode_fail
@@ -135,6 +147,7 @@ static int add_value (buffer_t * b)
 }
 
 #define ADDC(ch)                                 \
+    MESSAGE("Adding %c.\n", ch);                 \
     b->value[b->characters] = ch;                \
     b->characters++;                             \
     if (b->characters >= b->allocated) {         \
@@ -199,23 +212,30 @@ int lexer (void * ignore, const char ** json_ptr, buffer_t * b)
     int hex_digits;
     int hex;
 
+    if (! b->value) {
+        add_value (b);
+    }
+
     STATE(initial);
     case WHITESPACE:
+        MESSAGE ("whitespace.\n");
         goto initial;
     case GRAMMAR:
-        //MESSAGE ("%c\n", c);
+        MESSAGE ("grammar: %c\n", c);
         GOT (c);
-    case '-':
-        RESET;
+    case NUMBER_GRAMMAR:
         ADD;
-        goto start_number;
-    case DIGIT:
-        RESET;
-        PUSH;
-        goto start_number;
+        GOT (c);
+    case EXP:
+        ADD;
+        GOT (e);
+    case DIGIT19:
+        ADD;
+        GOT (digit19);
     case '"':
         RESET;
         goto string;
+
     LITERAL ('t', true);
     LITERAL ('f', false);
     LITERAL ('n', null);
@@ -259,24 +279,6 @@ int lexer (void * ignore, const char ** json_ptr, buffer_t * b)
         hex = 0;
         goto four_hex;
     END(ESCAPE);
-
-    STATE(start_number);
-    case DIGIT:
-        ADD;
-        goto number;
-    END(START_NUMBER);
-
-    STATE(number);
-    case DIGIT:
-    case 'e':
-    case 'E':
-    case '.':
-        ADD;
-        goto number;
-    default:
-        PUSH;
-        GOT_VALUE (NUMBER);
-    CLOSE;
 
     STATE(four_hex);
     case DIGIT:

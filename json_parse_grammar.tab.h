@@ -39,12 +39,13 @@
       know about them.  */
    enum yytokentype {
      chars = 258,
-     number = 259,
-     true = 260,
-     false = 261,
-     null = 262,
-     eof = 263,
-     error_initial = 264
+     digit19 = 259,
+     e = 260,
+     true = 261,
+     false = 262,
+     null = 263,
+     eof = 264,
+     error_initial = 265
    };
 #endif
 
@@ -64,7 +65,7 @@ typedef union YYSTYPE
 
 
 /* Line 1685 of yacc.c  */
-#line 68 "json_parse_grammar.tab.h"
+#line 69 "json_parse_grammar.tab.h"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */

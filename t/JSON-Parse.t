@@ -5,9 +5,10 @@ BEGIN { use_ok('JSON::Parse') };
 use JSON::Parse qw/json_to_perl valid_json/;
 use utf8;
 
-binmode STDOUT, ":utf8";
+#binmode STDOUT, ":utf8";
 my $jason = '{"bog":"log","frog":[1,2,3],"guff":{"x":"y","z":"monkey","t":[0,1,2.3,4,59999]}}';
 my $x = gub ($jason);
+print $x->{guff}->{t}->[2], "\n";
 ok ($x->{guff}->{t}->[2] == 2.3, "Two point three");
 
 my $fleece = '{"凄い":"技", "tickle":"baby"}';
