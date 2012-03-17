@@ -1,13 +1,13 @@
 /* This is a Cfunctions (version 0.27) generated header file.
    Cfunctions is a free program for extracting headers from C files.
-   Get Cfunctions from `http://cfunctions.sourceforge.net/'. */
+   Get Cfunctions from 'http://www.lemoda.net/cfunctions/'. */
 
 /* This file was generated with:
-`cfunctions -g unicode -n unicode.c unicode-character-class.c' */
+'cfunctions -g unicode -n unicode.c unicode-character-class.c' */
 #ifndef CFH_UNICODE_H
 #define CFH_UNICODE_H
 
-/* From `unicode.c': */
+/* From 'unicode.c': */
 
 #line 6 "unicode.c"
 #define UTF8_MAX_LENGTH 4
@@ -33,7 +33,7 @@ void print_bytes (const unsigned char * bytes );
 void test_ucs2_to_utf8 (const unsigned char * input );
 
 #endif /* def TEST */
-/* From `unicode-character-class.c': */
+/* From 'unicode-character-class.c': */
 
 #line 10 "unicode-character-class.c"
 int ucs2_is_kana (int ucs );

@@ -22,6 +22,7 @@ json_argo_t;
 
 /* Debugging messages. */
 
+#ifdef __GCC__
 #define MESSAGE(...) {                                       \
         if (data->verbose) {                                 \
             printf ("%s:%d: ", __FILE__, __LINE__);          \
@@ -29,6 +30,9 @@ json_argo_t;
             printf ("\n");                                   \
         }                                                    \
     }
+#else
+#define MESSAGE(x,...)
+#endif
 
 static json_parse_status
 json_argo_string_create (void * vdata, const char * string,
@@ -51,7 +55,6 @@ json_argo_array_create (void * vdata, json_parse_u_obj * out)
 {
     SV * array_sv;
     AV * array;
-    json_argo_t * data = vdata;
 
     MESSAGE ("Creating an array");
     array = newAV ();
@@ -65,7 +68,6 @@ json_argo_hash_create (void * vdata, json_parse_u_obj * out)
 {
     SV * hash_sv;
     HV * hash;
-    json_argo_t * data = vdata;
 
     MESSAGE ("Creating a hash");
     hash = newHV ();
@@ -79,7 +81,6 @@ json_argo_hash_create (void * vdata, json_parse_u_obj * out)
 static json_parse_status
 json_argo_ntf_create (void * vdata, json_type t, void ** out)
 {
-    json_argo_t * data = vdata;
     SV * ntf;
     MESSAGE ("NTF");
     switch (t) {
@@ -101,7 +102,6 @@ static json_parse_status
 json_argo_array_push (void * vdata, void * varray, void * velement)
 {
     SV * array_sv;
-    json_argo_t * data = vdata;
 
     MESSAGE ("Pushing onto an array");
     if (! varray) {
@@ -132,7 +132,6 @@ json_argo_array_push (void * vdata, void * varray, void * velement)
 static json_parse_status
 json_argo_hash_add (void * vdata, void * vhash, void * vleft, void * vright)
 {
-    json_argo_t * data = vdata;
     SV * hash_ref = vhash;
     MESSAGE ("Adding a pair to hash");
     if (SvROK (hash_ref)) {
@@ -142,7 +141,7 @@ json_argo_hash_add (void * vdata, void * vhash, void * vleft, void * vright)
             SV * right;
             left = vleft;
             right = vright;
-            hv_store_ent (hash, left, right, 0);
+            (void) hv_store_ent (hash, left, right, 0);
         }
         else {
             croak ("Error in add to hash");
@@ -162,7 +161,7 @@ json_argo_parse (json_parse_object * jpo, SV * json_sv)
     const char * json_bytes;
     const char * json_start;
     json_parse_status status;
-    int json_length;
+    unsigned int json_length;
     if (SvUTF8 (json_sv)) {
         json_argo_t * json_argo_data =  jpo->ud;
         json_argo_data->utf8 = 1;
@@ -270,7 +269,7 @@ json_argo_valid_parse (json_parse_object * jpo, SV * json_sv)
 {
     const char * json_bytes;
     json_parse_status status;
-    int json_length;
+    unsigned int json_length;
     json_bytes = SvPV (json_sv, json_length);
     status = json_parse (& json_bytes, jpo);
     return ! status;

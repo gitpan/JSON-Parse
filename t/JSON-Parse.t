@@ -1,6 +1,6 @@
 use warnings;
 use strict;
-use Test::More;
+use Test::More tests => 28;
 BEGIN { use_ok('JSON::Parse') };
 use JSON::Parse qw/json_to_perl valid_json/;
 use utf8;
@@ -87,7 +87,23 @@ my $xi = gub ($wi);
 ok ($xi->{address}->{postalCode} eq '10021', "Test a value $xi->{address}->{postalCode}");
 ok (valid_json ($wi), "Validate");
 
-done_testing ();
+my $perl_a = json_to_perl ('["a", "b", "c"]');
+ok (ref $perl_a eq 'ARRAY', "json array to perl array");
+my $perl_b = json_to_perl ('{"a":1, "b":2}');
+ok (ref $perl_b eq 'HASH', "json object to perl hash");
+
+use utf8;
+my $scorpion = '["蠍"]';
+my $p1 = json_to_perl ($scorpion);
+ok (utf8::is_utf8 ($p1->[0]), "UTF-8 survives");
+no utf8;
+my $ebi = '["蠍"]';
+my $p2 = json_to_perl ($ebi);
+ok (! utf8::is_utf8 ($p2->[0]), "Not UTF-8 not marked as UTF-8");
+
+
+# See https://rt.cpan.org/Ticket/Display.html?id=73743
+#done_testing ();
 exit;
 
 sub gub

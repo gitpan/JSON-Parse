@@ -7,7 +7,11 @@
 #include "json_parse.h"
 #include "json_parse_grammar.tab.h"
 
-#if 0
+/* The macro "MESSAGE" produces detailed messages on what the lexer is
+   doing. In normal use of the JSON parser, these messages are not
+   wanted. */
+
+#if 1
 #define MESSAGE(format, args...) {\
     printf (format, ## args);\
     }
@@ -84,11 +88,11 @@
 #define PUSH p--
 
 #define GOT(x)                                  \
-    MESSAGE("Got %c.\n", x);                   \
+    MESSAGE("Got %d.\n", x);                    \
     *json_ptr = p;                              \
     return x;
 
-#define GOT_VALUE(x)                            \
+#define GOT_VALUE(x)                                  \
     b->value[b->characters] = '\0';                   \
     GOT(x)
 
@@ -147,7 +151,7 @@ static int add_value (buffer_t * b)
 }
 
 #define ADDC(ch)                                 \
-    MESSAGE("Adding %c.\n", ch);                 \
+    MESSAGE("Adding '%c'.\n", ch);               \
     b->value[b->characters] = ch;                \
     b->characters++;                             \
     if (b->characters >= b->allocated) {         \
@@ -246,6 +250,7 @@ int lexer (void * ignore, const char ** json_ptr, buffer_t * b)
         MESSAGE ("Escape.\n");
         goto string_escape;
     case '"':
+        MESSAGE ("End of string.\n");
         GOT_VALUE (STRING);
     default:
         ADD;
