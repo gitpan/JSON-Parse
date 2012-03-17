@@ -11,7 +11,7 @@
    doing. In normal use of the JSON parser, these messages are not
    wanted. */
 
-#if 1
+#if 0
 #define MESSAGE(format, args...) {\
     printf (format, ## args);\
     }
