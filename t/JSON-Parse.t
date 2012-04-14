@@ -92,14 +92,20 @@ ok (ref $perl_a eq 'ARRAY', "json array to perl array");
 my $perl_b = json_to_perl ('{"a":1, "b":2}');
 ok (ref $perl_b eq 'HASH', "json object to perl hash");
 
-use utf8;
-my $scorpion = '["蠍"]';
-my $p1 = json_to_perl ($scorpion);
-ok (utf8::is_utf8 ($p1->[0]), "UTF-8 survives");
-no utf8;
-my $ebi = '["蠍"]';
-my $p2 = json_to_perl ($ebi);
-ok (! utf8::is_utf8 ($p2->[0]), "Not UTF-8 not marked as UTF-8");
+# The following tests use utf8::is_utf8, which is not available for
+# Perl versions less than 5.006.
+
+SKIP: {
+    skip "Skip utf8 tests due to perl version number", 2 unless $] >= 5.008;
+    use utf8;
+    my $scorpion = '["蠍"]';
+    my $p1 = json_to_perl ($scorpion);
+    ok (utf8::is_utf8 ($p1->[0]), "UTF-8 survives");
+    no utf8;
+    my $ebi = '["蠍"]';
+    my $p2 = json_to_perl ($ebi);
+    ok (! utf8::is_utf8 ($p2->[0]), "Not UTF-8 not marked as UTF-8");
+};
 
 
 # See https://rt.cpan.org/Ticket/Display.html?id=73743

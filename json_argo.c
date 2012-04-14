@@ -1,4 +1,14 @@
-/* Copyright (C) 2011 Ben Bullock <bkb@cpan.org>. */
+/* Copyright (C) 2011-2012 Ben Bullock <bkb@cpan.org>. */
+
+/* This file connects the pure C JSON parser with the Perl data
+   structures. It contains callers for the pure C JSON parser, and
+   callback functions which are called by the pure C JSON parser as it
+   gets each bit of information.
+
+   The top part of the file is for the "json_to_perl" routine which
+   actually puts each bit of the string into Perl. The bottom part of
+   the file, after the letters "validation", is for the "valid_json"
+   part. */
 
 #include "EXTERN.h"
 #include "perl.h"
