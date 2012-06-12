@@ -4,7 +4,7 @@ require Exporter;
 @EXPORT_OK = qw/json_to_perl valid_json/;
 use warnings;
 use strict;
-our $VERSION = '0.12';
+our $VERSION = '0.13';
 use XSLoader;
 XSLoader::load 'JSON::Parse', $VERSION;
 

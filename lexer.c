@@ -11,13 +11,21 @@
    doing. In normal use of the JSON parser, these messages are not
    wanted. */
 
+#ifdef _WIN32
+void message (const char * format, ...)
+{
+    return;
+}
+#define MESSAGE message
+#else
 #if 0
 #define MESSAGE(format, args...) {\
     printf (format, ## args);\
     }
 #else
 #define MESSAGE(format, args...)
-#endif
+#endif /* 0 */
+#endif /* _WIN32 */
 
 #define WHITESPACE         \
     '\n':                  \
