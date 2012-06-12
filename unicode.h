@@ -1,4 +1,4 @@
-/* This is a Cfunctions (version 0.27) generated header file.
+/* This is a Cfunctions (version 0.28) generated header file.
    Cfunctions is a free program for extracting headers from C files.
    Get Cfunctions from 'http://www.lemoda.net/cfunctions/'. */
 

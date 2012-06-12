@@ -4,7 +4,7 @@ require Exporter;
 @EXPORT_OK = qw/json_to_perl valid_json/;
 use warnings;
 use strict;
-our $VERSION = '0.11';
+our $VERSION = '0.12';
 use XSLoader;
 XSLoader::load 'JSON::Parse', $VERSION;
 
@@ -206,10 +206,9 @@ This module imposes the following restrictions on its input.
 =item JSON only
 
 JSON::Parse is a strict parser. It only parses JSON which exactly
-meets the criteria of L</RFC 4627>. That means, for example, unlike
-the standard L<JSON> module, JSON::Parse does not accept single quotes
-(') instead of double quotes ("), or numbers with leading zeros, like
-0123.
+meets the criteria of L</RFC 4627>. That means, for example,
+JSON::Parse does not accept single quotes (') instead of double quotes
+("), or numbers with leading zeros, like 0123.
 
 =item No incremental parsing
 
@@ -327,9 +326,7 @@ the parsing into an C<eval> block:
 
 =item RFC 4627
 
-JSON is specified in RFC (Request For Comments, a kind of internet
-standards document) 4627. See, for example,
-L<http://www.ietf.org/rfc/rfc4627.txt>.
+JSON is specified in L<http://www.ietf.org/rfc/rfc4627.txt>.
 
 =back
 

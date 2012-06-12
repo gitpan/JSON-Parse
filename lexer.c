@@ -171,7 +171,9 @@ static int add_value (buffer_t * b)
     PUSH;                                                \
     MESSAGE ("Testing for %s\n", #value);                \
     if (strncmp (p, #value, strlen (#value)) == 0) {     \
-        * json_ptr += strlen (#value);                   \
+        * json_ptr = p + strlen (#value);                \
+        MESSAGE ("Got %s, ptr now %c\n",                 \
+                 #value, ** json_ptr);                   \
         return value;                                    \
     }                                                    \
     else {                                               \

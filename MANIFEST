@@ -16,6 +16,5 @@ t/test-errors.t
 src/json_parse_grammar.y
 unicode.c
 unicode.h
-Changes
 META.yml                                 Module YAML meta-data (added by MakeMaker)
 META.json                                Module JSON meta-data (added by MakeMaker)

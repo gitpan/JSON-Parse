@@ -18,7 +18,7 @@ typedef struct buffer {
     int /* json_parse_status */ status;
 } buffer_t;
 
-#line 213 "lexer.c"
+#line 215 "lexer.c"
 int lexer (void * ignore , const char ** json_ptr , buffer_t * b );
 
 #endif /* CFH_LEXER_H */
