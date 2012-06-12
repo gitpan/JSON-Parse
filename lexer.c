@@ -12,7 +12,7 @@
    wanted. */
 
 #ifdef _WIN32
-void message (const char * format, ...)
+static void message (const char * format, ...)
 {
     return;
 }

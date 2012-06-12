@@ -9,13 +9,6 @@
 
 /* From 'lexer.c': */
 
-#line 16 "lexer.c"
-
-#ifdef _WIN32
-void message (const char * format , ... );
-
-#endif /* _WIN32 */
-
 #line 130 "lexer.c"
 typedef struct buffer {
     char * value;

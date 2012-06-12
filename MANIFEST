@@ -1,3 +1,5 @@
+MANIFEST			This list of files
+Makefile.PL
 Parse.xs
 json_argo.c
 json_argo.h
@@ -8,12 +10,11 @@ json_parse_grammar.tab.h
 lexer.c
 lexer.h
 lib/JSON/Parse.pm
-Makefile.PL
-MANIFEST			This list of files
 ppport.h
+src/json_parse_grammar.y
 t/JSON-Parse.t
 t/test-errors.t
-src/json_parse_grammar.y
+t/whitespace.t
 unicode.c
 unicode.h
 META.yml                                 Module YAML meta-data (added by MakeMaker)
