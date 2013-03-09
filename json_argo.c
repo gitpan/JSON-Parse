@@ -2,6 +2,7 @@
 #include <sys/mman.h> 
 #include <errno.h>
 #include <string.h>
+#include <ctype.h>
 
 /* Copyright (C) 2011-2013 Ben Bullock <bkb@cpan.org>. */
 
@@ -171,24 +172,36 @@ json_argo_hash_add (void * vdata, void * vhash, void * vleft, void * vright)
     return json_parse_ok;
 }
 
-#define JSON_PARSE \
-    status = json_parse (& json_bytes, jpo);\
-    if (status == json_parse_ok) {\
-        if (jpo->parse_result) {\
-            return jpo->parse_result;\
-        }\
-        else {\
-            return & PL_sv_undef;\
-        }        \
-    }\
-    else if (status == json_parse_no_input_fail) {\
-        return & PL_sv_undef;\
-    }\
-    else {\
-        croak ("Parsing failed: %s at line %d, byte %d",\
-               json_parse_status_messages[status],\
-               jpo->buffer.line, json_bytes - json_start);\
-        return & PL_sv_undef;\
+#define JSON_PARSE							\
+    status = json_parse (& json_bytes, jpo);				\
+    if (status == json_parse_ok) {					\
+        if (jpo->parse_result) {					\
+            return jpo->parse_result;					\
+        }								\
+        else {								\
+            return & PL_sv_undef;					\
+        }								\
+    }									\
+    else if (status == json_parse_no_input_fail) {			\
+        return & PL_sv_undef;						\
+    }									\
+    else {								\
+	unsigned char bad_byte = (unsigned char) json_bytes[0];		\
+	if (isprint (bad_byte)) {					\
+	    croak ("Parsing failed: %s at line %d, byte %d: '%c'",	\
+		   json_parse_status_messages[status],			\
+		   jpo->buffer.line,					\
+		   json_bytes - json_start + 1,				\
+		   bad_byte);						\
+	}								\
+	else {								\
+	    croak ("Parsing failed: %s at line %d, byte %d: '0x%2X'",	\
+		   json_parse_status_messages[status],			\
+		   jpo->buffer.line,					\
+		   json_bytes - json_start + 1,				\
+		   bad_byte );						\
+	}								\
+	return & PL_sv_undef;						\
     }
 
 static void

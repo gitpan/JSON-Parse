@@ -1,3 +1,12 @@
+0.16
+
+* Documented the json_file_to_perl routine.
+
+* Changed some error messages and removed unused error messages.
+
+* The byte numbers in error messages work, and the offending character
+  is also printed. There is an escape for non-printing characters.
+
 0.15
 
 * The line numbers in error messages work (line 1 is the first line

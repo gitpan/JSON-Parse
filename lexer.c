@@ -62,14 +62,6 @@ static void message (const char * format, ...)
  case ':':      \
  case ','
 
-/* Things which are parts of numbers. */
-
-#define NUMBER_GRAMMAR \
-    '.':               \
- case '-':             \
- case '+':             \
- case '0'
-
 /* The digits from one to nine. */
 
 #define DIGIT19                                      \
@@ -83,8 +75,7 @@ static void message (const char * format, ...)
  case '8':                                           \
  case '9'
 
-/* The "e" in things like 1.0e9. This needs to be a separate case from
-   NUMBER_GRAMMAR. */
+/* The "e" in things like 1.0e9. */
 
 #define EXP            \
     'e':               \
@@ -133,10 +124,10 @@ static void message (const char * format, ...)
 
 /* Return a token to the parser. */
 
-#define GOT(x)                                  \
+#define GOT(x)						\
     MESSAGE("I have got a valid token with id %d.\n",	\
-	    x);					\
-    *json_ptr = p;                              \
+	    x);						\
+    *json_ptr = p;					\
     return x;
 
 #define GOT_VALUE(x)                                  \
@@ -155,6 +146,8 @@ static void message (const char * format, ...)
 #define END(x)                                          \
     default:                                            \
     b->status = ERROR_ ## x;                            \
+    /* Set the pointer to the offending byte. */	\
+    *json_ptr = p - 1;					\
     MESSAGE ("Failing lex stage at character '%c',"	\
 	     " line %d, with value %s\n", c,		\
 	     b->line,					\
@@ -162,13 +155,9 @@ static void message (const char * format, ...)
     return -1;                                          \
 }
 
-/* End a transition table without a failure. */
-
-#define END_NO_DEFAULT }
-
 /* End a switch (transition table) without a failure. */
 
-#define CLOSE }
+#define END_NO_DEFAULT }
 
 #define BUFFER_SIZE 0x400
 
@@ -196,7 +185,12 @@ static int add_value (buffer_t * b)
     b->value[b->characters] = ch;                \
     b->characters++;                             \
     if (b->characters >= b->allocated) {         \
-        add_value (b);                           \
+	int ok;					 \
+        ok = add_value (b);			 \
+	if (! ok) {				 \
+	    b->status = json_parse_memory_fail;	 \
+	    return -1;				 \
+	}					 \
     }
 
 #define ADD ADDC(c)
@@ -285,8 +279,13 @@ int lexer (void * ignore, const char ** json_ptr, json_parse_object * jpo_x)
     case '.':
         ADD;
         GOT (c);
+
+	/* "+" does nothing and has no effect, so this lexer just
+	   skips it. */
+
     case '+':
         goto initial;
+
     case EXP:
         ADD;
         GOT (e);
@@ -297,6 +296,8 @@ int lexer (void * ignore, const char ** json_ptr, json_parse_object * jpo_x)
     case '"':
         RESET;
         goto string;
+
+	/* Look for the three literals, "true", "false", and "null". */
 
     LITERAL ('t', true);
     LITERAL ('f', false);
@@ -336,6 +337,11 @@ int lexer (void * ignore, const char ** json_ptr, json_parse_object * jpo_x)
         goto number;
 
     default:
+
+	/* The character we have just read is not part of a number, so
+	   push it back on the stack and decide what to do with all
+	   the bits and pieces accumulated so far. */
+
         PUSH;
         jpo_x->integer = num;
         if (minus) {
@@ -361,20 +367,24 @@ int lexer (void * ignore, const char ** json_ptr, json_parse_object * jpo_x)
         }
     END_NO_DEFAULT
 
-	/* This transition table parses a string, which means
-	   something beginning with " and ending with ". */
+    /* This transition table parses a string, which means
+       something beginning with " and ending with ". */
 
     STATE(string);
+
     case '\\':
         MESSAGE ("Escape.\n");
         goto string_escape;
+
     case '"':
         MESSAGE ("End of string.\n");
         GOT_VALUE (STRING);
+
     default:
         ADD;
         goto string;
-    CLOSE;
+
+    END_NO_DEFAULT;
 
     /* This transition table parses \ appearing in a string. For
        everything except \u, that means adding one character to the
@@ -408,7 +418,8 @@ int lexer (void * ignore, const char ** json_ptr, json_parse_object * jpo_x)
         goto four_hex;
     END(ESCAPE);
 
-    /* This transition table parses anything like "\u3000". */
+    /* This transition table parses \u escaped Unicode characters like
+       "\u3000". */
 
     STATE(four_hex);
     case DIGIT:
@@ -467,6 +478,5 @@ int main ()
     }
     return 0;
 }
-
 
 #endif

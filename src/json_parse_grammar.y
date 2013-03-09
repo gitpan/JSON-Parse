@@ -1,4 +1,4 @@
-/* Copyright (c) 2010-2011 Ben Bullock (bkb@cpan.org). */
+/* Copyright (c) 2010-2013 Ben Bullock (bkb@cpan.org). */
 
 /* JSON parser */
 
@@ -57,6 +57,14 @@
 information. The "scanner" member of "jpo_x" is that information. */
 
 #define jpo_x_buffer (& jpo_x->buffer)
+
+/* Terminate the buffer. */
+
+#define TERMI jpo_x->buffer.value[jpo_x->buffer.characters] = '\0'
+
+/* Empty the buffer. */
+
+#define EMPTY jpo_x->buffer.characters = 0
 
 %}
 
@@ -132,7 +140,7 @@ _pair:	string ':' _value	{ $$[0] = $1; $$[1] = $3;}
 string: chars                   { CALL(string_create)
                                       (UD, jpo_x_buffer->value, & $$); 
                                   CHK; 
-                                  jpo_x_buffer->characters = 0;
+                                  EMPTY;
                                 }
 
 array:	'[' _list ']'		{ $$ = $2; }
@@ -146,15 +154,15 @@ _list:	/* empty */		{ CALL(array_create)(UD, & $$); CHK; }
 _value:	chars	    		{ CALL(string_create)
                                       (UD, jpo_x_buffer->value, & $$); CHK; }
         | integer               {
-                                        jpo_x_buffer->value[jpo_x_buffer->characters] = '\0'; 
-                                        CALL(integer_create)(UD, jpo_x->integer, & $$);
-                                        CHK
-                                        jpo_x_buffer->characters = 0;
+                                  TERMI; 
+                                  CALL(integer_create)(UD, jpo_x->integer, & $$);
+                                  CHK
+                                  EMPTY;
                                 }
-	| number         	{ jpo_x_buffer->value[jpo_x_buffer->characters] = '\0'; 
+	| number         	{ TERMI; 
                                   CALL(number_create)(UD, jpo_x_buffer->value, & $$);
                                   CHK
-                                  jpo_x_buffer->characters = 0;
+                                  EMPTY;
                                 }
 	| object
 	| array

@@ -131,10 +131,18 @@ information. The "scanner" member of "jpo_x" is that information. */
 
 #define jpo_x_buffer (& jpo_x->buffer)
 
+/* Terminate the buffer. */
+
+#define TERMI jpo_x->buffer.value[jpo_x->buffer.characters] = '\0'
+
+/* Empty the buffer. */
+
+#define EMPTY jpo_x->buffer.characters = 0
+
 
 
 /* Line 268 of yacc.c  */
-#line 138 "json_parse_grammar.tab.c"
+#line 146 "json_parse_grammar.tab.c"
 
 # ifndef YY_NULL
 #  if defined __cplusplus && 201103L <= __cplusplus
@@ -192,7 +200,7 @@ typedef union YYSTYPE
 {
 
 /* Line 295 of yacc.c  */
-#line 79 "json_parse_grammar.y"
+#line 87 "json_parse_grammar.y"
 
     json_parse_u_obj	  uo;
     json_parse_u_obj 	  uo_pair[2];
@@ -201,7 +209,7 @@ typedef union YYSTYPE
 
 
 /* Line 295 of yacc.c  */
-#line 205 "json_parse_grammar.tab.c"
+#line 213 "json_parse_grammar.tab.c"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
@@ -213,7 +221,7 @@ typedef union YYSTYPE
 
 
 /* Line 345 of yacc.c  */
-#line 217 "json_parse_grammar.tab.c"
+#line 225 "json_parse_grammar.tab.c"
 
 #ifdef short
 # undef short
@@ -513,10 +521,10 @@ static const yytype_int8 yyrhs[] =
 /* YYRLINE[YYN] -- source line where rule number YYN was defined.  */
 static const yytype_uint8 yyrline[] =
 {
-       0,   111,   111,   114,   118,   119,   120,   122,   124,   125,
-     127,   130,   132,   138,   140,   141,   143,   146,   148,   154,
-     159,   160,   161,   162,   163,   166,   167,   168,   172,   173,
-     174,   178,   179,   180,   182,   184,   185,   186,   187,   188
+       0,   119,   119,   122,   126,   127,   128,   130,   132,   133,
+     135,   138,   140,   146,   148,   149,   151,   154,   156,   162,
+     167,   168,   169,   170,   171,   174,   175,   176,   180,   181,
+     182,   186,   187,   188,   190,   192,   193,   194,   195,   196
 };
 #endif
 
@@ -1489,7 +1497,7 @@ yyreduce:
         case 2:
 
 /* Line 1810 of yacc.c  */
-#line 111 "json_parse_grammar.y"
+#line 119 "json_parse_grammar.y"
     { MESSAGE ("json=object");
                                   jpo_x->parse_result = (yyval.uo);
                                   return jpo_x->buffer.status; }
@@ -1498,7 +1506,7 @@ yyreduce:
   case 3:
 
 /* Line 1810 of yacc.c  */
-#line 114 "json_parse_grammar.y"
+#line 122 "json_parse_grammar.y"
     { MESSAGE ("json=array");
                                   jpo_x->parse_result = (yyval.uo);
                                   return jpo_x->buffer.status; }
@@ -1507,42 +1515,42 @@ yyreduce:
   case 4:
 
 /* Line 1810 of yacc.c  */
-#line 118 "json_parse_grammar.y"
+#line 126 "json_parse_grammar.y"
     { FAIL (no_input); }
     break;
 
   case 5:
 
 /* Line 1810 of yacc.c  */
-#line 119 "json_parse_grammar.y"
+#line 127 "json_parse_grammar.y"
     { FAIL (bad_start); }
     break;
 
   case 6:
 
 /* Line 1810 of yacc.c  */
-#line 120 "json_parse_grammar.y"
+#line 128 "json_parse_grammar.y"
     { FAIL (grammar); }
     break;
 
   case 7:
 
 /* Line 1810 of yacc.c  */
-#line 122 "json_parse_grammar.y"
+#line 130 "json_parse_grammar.y"
     { (yyval.uo) = (yyvsp[(2) - (3)].uo);}
     break;
 
   case 8:
 
 /* Line 1810 of yacc.c  */
-#line 124 "json_parse_grammar.y"
+#line 132 "json_parse_grammar.y"
     { CALL(object_create)(UD, & (yyval.uo)); CHK; }
     break;
 
   case 9:
 
 /* Line 1810 of yacc.c  */
-#line 125 "json_parse_grammar.y"
+#line 133 "json_parse_grammar.y"
     { CALL(object_create)(UD, & (yyval.uo)); CHK
 	  			  CALL2(object_add)(UD, (yyval.uo), (yyvsp[(1) - (1)].uo_pair)[0], (yyvsp[(1) - (1)].uo_pair)[1]);}
     break;
@@ -1550,7 +1558,7 @@ yyreduce:
   case 10:
 
 /* Line 1810 of yacc.c  */
-#line 127 "json_parse_grammar.y"
+#line 135 "json_parse_grammar.y"
     { CALL(object_add)(UD, (yyvsp[(1) - (3)].uo), (yyvsp[(3) - (3)].uo_pair)[0], (yyvsp[(3) - (3)].uo_pair)[1]); CHK; 
                                   (yyval.uo) = (yyvsp[(1) - (3)].uo);}
     break;
@@ -1558,39 +1566,39 @@ yyreduce:
   case 11:
 
 /* Line 1810 of yacc.c  */
-#line 130 "json_parse_grammar.y"
+#line 138 "json_parse_grammar.y"
     { (yyval.uo_pair)[0] = (yyvsp[(1) - (3)].uo); (yyval.uo_pair)[1] = (yyvsp[(3) - (3)].uo);}
     break;
 
   case 12:
 
 /* Line 1810 of yacc.c  */
-#line 132 "json_parse_grammar.y"
+#line 140 "json_parse_grammar.y"
     { CALL(string_create)
                                       (UD, jpo_x_buffer->value, & (yyval.uo)); 
                                   CHK; 
-                                  jpo_x_buffer->characters = 0;
+                                  EMPTY;
                                 }
     break;
 
   case 13:
 
 /* Line 1810 of yacc.c  */
-#line 138 "json_parse_grammar.y"
+#line 146 "json_parse_grammar.y"
     { (yyval.uo) = (yyvsp[(2) - (3)].uo); }
     break;
 
   case 14:
 
 /* Line 1810 of yacc.c  */
-#line 140 "json_parse_grammar.y"
+#line 148 "json_parse_grammar.y"
     { CALL(array_create)(UD, & (yyval.uo)); CHK; }
     break;
 
   case 15:
 
 /* Line 1810 of yacc.c  */
-#line 141 "json_parse_grammar.y"
+#line 149 "json_parse_grammar.y"
     { CALL(array_create)(UD, & (yyval.uo)); CHK; 
 	  			  CALL2(array_add)(UD, (yyval.uo), (yyvsp[(1) - (1)].uo)); CHK; }
     break;
@@ -1598,14 +1606,14 @@ yyreduce:
   case 16:
 
 /* Line 1810 of yacc.c  */
-#line 143 "json_parse_grammar.y"
+#line 151 "json_parse_grammar.y"
     { CALL(array_add)(UD, (yyvsp[(1) - (3)].uo), (yyvsp[(3) - (3)].uo)); CHK; (yyval.uo) = (yyvsp[(1) - (3)].uo); }
     break;
 
   case 17:
 
 /* Line 1810 of yacc.c  */
-#line 146 "json_parse_grammar.y"
+#line 154 "json_parse_grammar.y"
     { CALL(string_create)
                                       (UD, jpo_x_buffer->value, & (yyval.uo)); CHK; }
     break;
@@ -1613,51 +1621,51 @@ yyreduce:
   case 18:
 
 /* Line 1810 of yacc.c  */
-#line 148 "json_parse_grammar.y"
+#line 156 "json_parse_grammar.y"
     {
-                                        jpo_x_buffer->value[jpo_x_buffer->characters] = '\0'; 
-                                        CALL(integer_create)(UD, jpo_x->integer, & (yyval.uo));
-                                        CHK
-                                        jpo_x_buffer->characters = 0;
+                                  TERMI; 
+                                  CALL(integer_create)(UD, jpo_x->integer, & (yyval.uo));
+                                  CHK
+                                  EMPTY;
                                 }
     break;
 
   case 19:
 
 /* Line 1810 of yacc.c  */
-#line 154 "json_parse_grammar.y"
-    { jpo_x_buffer->value[jpo_x_buffer->characters] = '\0'; 
+#line 162 "json_parse_grammar.y"
+    { TERMI; 
                                   CALL(number_create)(UD, jpo_x_buffer->value, & (yyval.uo));
                                   CHK
-                                  jpo_x_buffer->characters = 0;
+                                  EMPTY;
                                 }
     break;
 
   case 22:
 
 /* Line 1810 of yacc.c  */
-#line 161 "json_parse_grammar.y"
+#line 169 "json_parse_grammar.y"
     { CALL(ntf_create)(UD, json_true, & (yyval.uo)); CHK; }
     break;
 
   case 23:
 
 /* Line 1810 of yacc.c  */
-#line 162 "json_parse_grammar.y"
+#line 170 "json_parse_grammar.y"
     { CALL(ntf_create)(UD, json_false, & (yyval.uo)); CHK; }
     break;
 
   case 24:
 
 /* Line 1810 of yacc.c  */
-#line 163 "json_parse_grammar.y"
+#line 171 "json_parse_grammar.y"
     { CALL(ntf_create)(UD, json_null, & (yyval.uo)); CHK; }
     break;
 
 
 
 /* Line 1810 of yacc.c  */
-#line 1661 "json_parse_grammar.tab.c"
+#line 1669 "json_parse_grammar.tab.c"
       default: break;
     }
   /* User semantic actions sometimes alter yychar, and that requires
@@ -1888,7 +1896,7 @@ yyreturn:
 
 
 /* Line 2071 of yacc.c  */
-#line 190 "json_parse_grammar.y"
+#line 198 "json_parse_grammar.y"
 
 
 /*

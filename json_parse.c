@@ -22,17 +22,13 @@ buffer_t;
 
 typedef enum {
     json_parse_ok,
-    json_parse_fail,
-    json_parse_callback_fail,
     json_parse_memory_fail,
     json_parse_grammar_fail,
     json_parse_lex_fail,
-    json_parse_unimplemented_fail,
     json_parse_unicode_fail,
     json_parse_no_input_fail,
     json_parse_bad_start_fail,
     json_parse_unknown_escape_fail,
-    json_parse_number_fail,
     json_parse_n_statuses,
 } 
 json_parse_status;
@@ -103,17 +99,13 @@ json_parse_object;
 
 const char * json_parse_status_messages[json_parse_n_statuses] = {
     "OK",
-    "unknown failure",
-    "a callback routine failed",
-    "out of memory",
-    "parser failed (this JSON is not grammatically correct)",
-    "lexer failed (there are stray characters in the input)",
-    "unimplemented feature of JSON encountered in input",
-    "Unicode \\uXXXX decoding failed",
-    "input was empty",
-    "the text did not start with { or [ as it should have",
-    "met an unknown escape sequence (backslash \\ + character)",
-    "there was an unparseable number in the input",
+    "Out of memory",
+    "The JSON is not grammatically correct",
+    "There are stray characters in the JSON",
+    "There is a badly-formed \\u Unicode escape in the JSON",
+    "The JSON string is empty",
+    "The JSON did not start with '{' or '['",
+    "There is an unknown escape sequence in the JSON",
 };
 
 /* This declares the parsing function in

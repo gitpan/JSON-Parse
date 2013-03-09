@@ -24,17 +24,13 @@ typedef struct buffer {
 buffer_t;
 typedef enum {
     json_parse_ok,
-    json_parse_fail,
-    json_parse_callback_fail,
     json_parse_memory_fail,
     json_parse_grammar_fail,
     json_parse_lex_fail,
-    json_parse_unimplemented_fail,
     json_parse_unicode_fail,
     json_parse_no_input_fail,
     json_parse_bad_start_fail,
     json_parse_unknown_escape_fail,
-    json_parse_number_fail,
     json_parse_n_statuses,
 } 
 json_parse_status;
@@ -87,19 +83,19 @@ typedef struct {
 }
 json_parse_object;
 
-#line 117 "json_parse.c"
+#line 109 "json_parse.c"
 extern const char * json_parse_status_messages[];
 
-#line 129 "json_parse.c"
+#line 121 "json_parse.c"
 void json_parse_init (json_parse_object * jpo );
 
-#line 135 "json_parse.c"
+#line 127 "json_parse.c"
 int json_parse (const char ** json , json_parse_object * jpo );
 
-#line 146 "json_parse.c"
+#line 138 "json_parse.c"
 void json_parse_free (json_parse_object * jpo );
 
-#line 157 "json_parse.c"
+#line 149 "json_parse.c"
 int json_parse_error (const char ** json_ptr , json_parse_object * jpo_x , const char * message );
 
 #endif /* CFH_JSON_PARSE_H */

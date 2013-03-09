@@ -1,7 +1,7 @@
 use warnings;
 use strict;
 use JSON::Parse 'json_to_perl';
-use Test::More tests => 11;
+use Test::More tests => 12;
 
 my $p;
 
@@ -51,6 +51,11 @@ eval {
     json_to_perl ('[0111]');
 };
 ok ($@);
+
+# Test the claim in the documentation.
+
+my $exp = json_to_perl ('[1.9e+9]');
+ok ($exp->[0] eq '1.9e9', "test documentation claim of stripping plus signs");
 
 # See https://rt.cpan.org/Ticket/Display.html?id=73743
 #done_testing;

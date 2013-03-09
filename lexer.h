@@ -9,7 +9,7 @@
 
 /* From 'lexer.c': */
 
-#line 258 "lexer.c"
+#line 252 "lexer.c"
 int lexer (void * ignore , const char ** json_ptr , json_parse_object * jpo_x );
 
 #endif /* CFH_LEXER_H */
