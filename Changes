@@ -1,0 +1,12 @@
+0.15
+
+* The line numbers in error messages work (line 1 is the first line
+  now).
+
+* The incorrect information about compilation failing on Windows has
+  been removed from the documentation.
+
+* There are some more tests.
+
+* There is a "Changes" file.
+

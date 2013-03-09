@@ -1,10 +1,10 @@
 package JSON::Parse;
 require Exporter;
 @ISA = qw(Exporter);
-@EXPORT_OK = qw/json_to_perl valid_json/;
+@EXPORT_OK = qw/json_to_perl valid_json json_file_to_perl/;
 use warnings;
 use strict;
-our $VERSION = '0.14';
+our $VERSION = '0.15';
 use XSLoader;
 XSLoader::load 'JSON::Parse', $VERSION;
 
@@ -42,8 +42,6 @@ strings in its output are also marked as Unicode characters.
 
 JSON::Parse also provides a high speed validation function,
 L</valid_json>.
-
-JSON::Parse is based on C and users require a C compiler to install it.
 
 JSON means "JavaScript Object Notation" and it is specified in L</RFC
 4627>.
@@ -160,10 +158,10 @@ has the same result as a Perl declaration of the form
 
 =head2 JSON objects
 
-JSON objects become Perl hashes. The members of the object are mapped
-to pairs of key and value in the Perl hash. The string part of each
-object member becomes the key of the Perl hash. The value part of each
-member is mapped to the value of the Perl hash.
+JSON objects become Perl hashes. The members of the JSON object become
+key and value pairs in the Perl hash. The string part of each object
+member becomes the key of the Perl hash. The value part of each member
+is mapped to the value of the Perl hash.
 
 Thus
 
@@ -254,22 +252,6 @@ floating point numbers are understood by Perl (see L</JSON numbers>
 above). Most integer and floating point numbers encountered should be
 OK, but there is a chance that there are some numbers allowed in the
 JSON format which Perl cannot understand.
-
-=item Line numbers are off by one
-
-The line numbers in the error messages are off by one (line 1 is line
-0).
-
-=item Compilation failure on Windows compilers
-
-The C code which JSON::Parse is based on uses some dialect features of
-the GNU version of C, and it will not compile on some Microsoft
-Windows compilers.
-
-=item C compiler required
-
-At the moment there is no "pure Perl" version of the module, so use of
-the module requires a C compiler.
 
 =back
 

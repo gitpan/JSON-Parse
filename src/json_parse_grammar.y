@@ -13,8 +13,8 @@
 
 #define json_parse_lex lexer
 
-#include "lexer.h"
 #include "json_parse.h"
+#include "lexer.h"
 #include "json_parse_grammar.tab.h"
 
 #define CALL(f) json_parse_status js; js = (*jpo_x->f)
@@ -72,7 +72,7 @@ information. The "scanner" member of "jpo_x" is that information. */
 /* Arguments passed out to the lexer. */
 
 %lex-param {const char ** json_ptr}
-%lex-param {buffer_t * jpo_x_buffer}
+%lex-param {json_parse_object * jpo_x}
 
 /* This holds one "word" in the grammar. */
 
@@ -92,6 +92,11 @@ information. The "scanner" member of "jpo_x" is that information. */
 %token null
 %token eof
 %token error_initial
+%token pinteger
+%token ninteger
+%token pzinteger
+%token nzinteger
+%token zero
 %type <uo> json
 %type <uo> object
 %type <uo> array
@@ -116,30 +121,36 @@ json:	object eof              { MESSAGE ("json=object");
 
 object: '{' _pairs '}'		{ $$ = $2;}
 
-_pairs:	/* empty */		{ CALL(object_create)(UD, & $$); CHK }
+_pairs:	/* empty */		{ CALL(object_create)(UD, & $$); CHK; }
 	| _pair	 		{ CALL(object_create)(UD, & $$); CHK
 	  			  CALL2(object_add)(UD, $$, $1[0], $1[1]);}
-	| _pairs ',' _pair	{ CALL(object_add)(UD, $1, $3[0], $3[1]); CHK 
+	| _pairs ',' _pair	{ CALL(object_add)(UD, $1, $3[0], $3[1]); CHK; 
                                   $$ = $1;}
 
 _pair:	string ':' _value	{ $$[0] = $1; $$[1] = $3;}
 
 string: chars                   { CALL(string_create)
                                       (UD, jpo_x_buffer->value, & $$); 
-                                  CHK 
+                                  CHK; 
                                   jpo_x_buffer->characters = 0;
                                 }
 
 array:	'[' _list ']'		{ $$ = $2; }
 
-_list:	/* empty */		{ CALL(array_create)(UD, & $$); CHK }
-	| _value		{ CALL(array_create)(UD, & $$); CHK 
-	  			  CALL2(array_add)(UD, $$, $1); CHK }
+_list:	/* empty */		{ CALL(array_create)(UD, & $$); CHK; }
+	| _value		{ CALL(array_create)(UD, & $$); CHK; 
+	  			  CALL2(array_add)(UD, $$, $1); CHK; }
 	| _list ',' _value	{ CALL(array_add)(UD, $1, $3); CHK; $$ = $1; }
 
 
 _value:	chars	    		{ CALL(string_create)
-                                      (UD, jpo_x_buffer->value, & $$); CHK }
+                                      (UD, jpo_x_buffer->value, & $$); CHK; }
+        | integer               {
+                                        jpo_x_buffer->value[jpo_x_buffer->characters] = '\0'; 
+                                        CALL(integer_create)(UD, jpo_x->integer, & $$);
+                                        CHK
+                                        jpo_x_buffer->characters = 0;
+                                }
 	| number         	{ jpo_x_buffer->value[jpo_x_buffer->characters] = '\0'; 
                                   CALL(number_create)(UD, jpo_x_buffer->value, & $$);
                                   CHK
@@ -147,30 +158,34 @@ _value:	chars	    		{ CALL(string_create)
                                 }
 	| object
 	| array
-	| true			{ CALL(ntf_create)(UD, json_true, & $$); CHK }
-	| false			{ CALL(ntf_create)(UD, json_false, & $$); CHK }
-	| null			{ CALL(ntf_create)(UD, json_null, & $$); CHK }
+	| true			{ CALL(ntf_create)(UD, json_true, & $$); CHK; }
+	| false			{ CALL(ntf_create)(UD, json_false, & $$); CHK; }
+	| null			{ CALL(ntf_create)(UD, json_null, & $$); CHK; }
 
-number:   int
-        | int '.' digits
-        | int exp
-        | int '.' digits exp
 
-int:    positive
-        | '-' positive
+number: integer '.' digits
+      | integer exp
+      | integer '.' digits exp
 
-positive: digit
-        | digit19 digits
+/* Digits can have leading zeros but cannot have a minus sign. */
 
-digits: digit
-        | digit digits
+digits: pzinteger
+      | pinteger
+      | zero
 
-digit:  '0'
-        | digit19
+/* Integer cannot have leading zeros. */
 
-exp:    e digits
-        | e '+' digits
-        | e '-' digits
+integer: pinteger
+       | ninteger
+       | zero
+
+exp: e exp_tail
+
+exp_tail: pzinteger
+        | nzinteger
+        | ninteger
+        | pinteger
+        | zero
 
 %%
 

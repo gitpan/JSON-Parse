@@ -1,0 +1,15 @@
+^bugs\.txt$
+blib/.*
+pm_to_blib
+^.*\.o$
+^Parse\.(c|o|bs)$
+^makeitfile$
+^build\.pl$
+dists/.*
+oneoff/.*
+xt/.*
+JSON-Parse-[0-9\.]+(/.*|\.tar\.gz$)
+^\.gitignore$
+^.*\.~[0-9]+~$
+^Makefile$
+^MYMETA\.(json|yml)$

@@ -4,9 +4,10 @@
 
 #include "ppport.h"
 
-#include "lexer.h"
 #include "json_parse.h"
-#include "json_argo.h"
+#include "lexer.h"
+
+#include "json_argo.c"
 
 MODULE = JSON::Parse     PACKAGE = JSON::Parse
 
@@ -14,13 +15,20 @@ PROTOTYPES: ENABLE
 
 SV * json_to_perl (SV * json)
 CODE:
-RETVAL = json_argo_to_perl (json);
+	RETVAL = json_argo_to_perl (json);
 OUTPUT:
-RETVAL
+	RETVAL
+
+SV * json_file_to_perl (char * file_name)
+CODE:
+	RETVAL = json_argo_file_to_perl (file_name);
+OUTPUT:
+	RETVAL
 
 int valid_json (SV * json)
 CODE:
-RETVAL = json_argo_valid_json (json);
+	RETVAL = json_argo_valid_json (json);
 OUTPUT:
-RETVAL
+	RETVAL
+
 

@@ -1,4 +1,9 @@
-/* Copyright (C) 2011-2012 Ben Bullock <bkb@cpan.org>. */
+#include <sys/stat.h>
+#include <sys/mman.h> 
+#include <errno.h>
+#include <string.h>
+
+/* Copyright (C) 2011-2013 Ben Bullock <bkb@cpan.org>. */
 
 /* This file connects the pure C JSON parser with the Perl data
    structures. It contains callers for the pure C JSON parser, and
@@ -9,16 +14,6 @@
    actually puts each bit of the string into Perl. The bottom part of
    the file, after the letters "validation", is for the "valid_json"
    part. */
-
-#include "EXTERN.h"
-#include "perl.h"
-#include "XSUB.h"
-
-#include "ppport.h"
-
-#include "lexer.h"
-#include "json_parse.h"
-#include "json_argo.h"
 
 /* json_argo_t carries around any information we want to know about as
    we parse the text. */
@@ -57,6 +52,19 @@ json_argo_string_create (void * vdata, const char * string,
         SvUTF8_on (string_sv);
     }
     * out = string_sv;
+    return json_parse_ok;
+}
+
+static json_parse_status
+json_argo_integer_create (void * vdata, int integer,
+                         json_parse_u_obj * out)
+{
+    SV * integer_sv;
+    json_argo_t * data = vdata;
+
+    MESSAGE ("Creating an integer SV from '%d'", integer);
+    integer_sv = newSViv (integer);
+    * out = integer_sv;
     return json_parse_ok;
 }
 
@@ -163,9 +171,67 @@ json_argo_hash_add (void * vdata, void * vhash, void * vleft, void * vright)
     return json_parse_ok;
 }
 
+#define JSON_PARSE \
+    status = json_parse (& json_bytes, jpo);\
+    if (status == json_parse_ok) {\
+        if (jpo->parse_result) {\
+            return jpo->parse_result;\
+        }\
+        else {\
+            return & PL_sv_undef;\
+        }        \
+    }\
+    else if (status == json_parse_no_input_fail) {\
+        return & PL_sv_undef;\
+    }\
+    else {\
+        croak ("Parsing failed: %s at line %d, byte %d",\
+               json_parse_status_messages[status],\
+               jpo->buffer.line, json_bytes - json_start);\
+        return & PL_sv_undef;\
+    }
+
+static void
+mmap_file (const char * file_name, const char ** json_bytes_ptr,
+           unsigned int * json_length_ptr)
+{
+    int fd;
+    struct stat s;
+    int json_length;
+    int status;
+    const char * json_bytes;
+
+    fd = open (file_name, O_RDONLY);
+    if (fd < 0) {
+        croak ("Can't open %s: %s", file_name, strerror (errno));
+    }
+    status = fstat (fd, & s);
+    if (status < 0) {
+        croak ("Can't fstat %s: %s", file_name, strerror (errno));
+    }
+    json_length = s.st_size;
+    json_bytes = mmap (0, json_length, PROT_READ, 0, fd, 0);
+    if (json_bytes == MAP_FAILED) {
+        croak ("mmap %s failed: %s", file_name, strerror (errno));
+    }
+    * json_length_ptr = json_length;
+    * json_bytes_ptr = json_bytes;
+}
+
+static SV *
+json_argo_parse_file (json_parse_object * jpo, const char * file_name)
+{
+    const char * json_bytes;
+    const char * json_start;
+    json_parse_status status;
+    unsigned int json_length;
+    mmap_file (file_name, & json_bytes, & json_length);
+    JSON_PARSE;
+}
+
 /* Given JSON in a string, turn it in to Perl. */
 
-SV *
+static SV *
 json_argo_parse (json_parse_object * jpo, SV * json_sv)
 {
     const char * json_bytes;
@@ -184,40 +250,28 @@ json_argo_parse (json_parse_object * jpo, SV * json_sv)
     }
     json_start = SvPV (json_sv, json_length);
     json_bytes = json_start;
-    status = json_parse (& json_bytes, jpo);
-    if (status == json_parse_ok) {
-        if (jpo->parse_result) {
-            return jpo->parse_result;
-        }
-        else {
-            return & PL_sv_undef;
-        }        
-    }
-    else if (status == json_parse_no_input_fail) {
-        return & PL_sv_undef;
-    }
-    else {
-        croak ("Parsing failed: %s at line %d, byte %d",
-               json_parse_status_messages[status],
-               jpo->buffer.line, json_bytes - json_start);
-        return & PL_sv_undef;
-    }
+    JSON_PARSE;
 }
 
-SV *
+#define INIT_JPO                                \
+    json_argo_t json_argo_data = {0};           \
+    json_parse_object jpo = {                   \
+        json_argo_string_create,                \
+        json_argo_string_create,                \
+        json_argo_integer_create,               \
+        json_argo_array_create,                 \
+        json_argo_hash_create,                  \
+        json_argo_ntf_create,                   \
+        json_argo_array_push,                   \
+        json_argo_hash_add,                     \
+        & json_argo_data,                       \
+    }
+
+
+static SV *
 json_argo_to_perl (SV * json_sv)
 {
-    json_argo_t json_argo_data = {0};
-    json_parse_object jpo = {
-        json_argo_string_create,
-        json_argo_string_create,
-        json_argo_array_create,
-        json_argo_hash_create,
-        json_argo_ntf_create,
-        json_argo_array_push,
-        json_argo_hash_add,
-        & json_argo_data,
-    };
+    INIT_JPO;
     SV * r;
 
     //    json_argo_data.verbose = 1;
@@ -239,6 +293,13 @@ json_argo_to_perl (SV * json_sv)
 
 static json_parse_status
 json_argo_string_create_valid (void * vdata, const char * string,
+                                  json_parse_u_obj * out)
+{
+    return json_parse_ok;
+}
+
+static json_parse_status
+json_argo_integer_create_valid (void * vdata, int integer,
                                   json_parse_u_obj * out)
 {
     return json_parse_ok;
@@ -285,13 +346,14 @@ json_argo_valid_parse (json_parse_object * jpo, SV * json_sv)
     return ! status;
 }
 
-int
+static int
 json_argo_valid_json (SV * json_sv)
 {
     json_argo_t json_argo_data = {0};
     json_parse_object jpo = {
         json_argo_string_create_valid,
         json_argo_string_create_valid,
+        json_argo_integer_create_valid,
         json_argo_array_create_valid,
         json_argo_hash_create_valid,
         json_argo_ntf_create_valid,
@@ -304,6 +366,20 @@ json_argo_valid_json (SV * json_sv)
     json_parse_init (& jpo);
 
     r = json_argo_valid_parse (& jpo, json_sv);
+    json_parse_free (& jpo);
+    return r;
+}
+
+static SV *
+json_argo_file_to_perl (const char * file_name)
+{
+    INIT_JPO;
+    SV * r;
+
+    //    json_argo_data.verbose = 1;
+    json_parse_init (& jpo);
+
+    r = json_argo_parse_file (& jpo, file_name);
     json_parse_free (& jpo);
     return r;
 }

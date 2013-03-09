@@ -3,8 +3,8 @@
 #include <string.h>
 
 #include "unicode.h"
-#include "lexer.h"
 #include "json_parse.h"
+#include "lexer.h"
 #include "json_parse_grammar.tab.h"
 
 /* The macro "MESSAGE" produces detailed messages on what the lexer is
@@ -12,20 +12,38 @@
    wanted. */
 
 #ifdef _WIN32
+
 static void message (const char * format, ...)
 {
+    /* Do nothing, just return. */
+
     return;
 }
+
 #define MESSAGE message
-#else
+
+#else /* not _WIN32 */
+
 #if 0
-#define MESSAGE(format, args...) {\
-    printf (format, ## args);\
+
+/* This is for debugging, it prints a message about everything the
+   code is doing. */
+
+#define MESSAGE(format, args...) {		\
+	printf ("%s:%d: ", __FILE__, __LINE__);	\
+	printf (format, ## args);		\
     }
-#else
+
+#else /* 0 */
+
 #define MESSAGE(format, args...)
+
 #endif /* 0 */
+
 #endif /* _WIN32 */
+
+/* Match for whitespace, as defined by the JSON specification. This
+   also increments the line number. */
 
 #define WHITESPACE         \
     '\n':                  \
@@ -33,6 +51,8 @@ static void message (const char * format, ...)
  case ' ':                 \
  case '\t':                \
  case '\r'
+
+/* JSON grammar artefacts. */
 
 #define GRAMMAR \
     '{':        \
@@ -42,11 +62,15 @@ static void message (const char * format, ...)
  case ':':      \
  case ','
 
+/* Things which are parts of numbers. */
+
 #define NUMBER_GRAMMAR \
     '.':               \
  case '-':             \
  case '+':             \
  case '0'
+
+/* The digits from one to nine. */
 
 #define DIGIT19                                      \
     '1':                                             \
@@ -59,44 +83,59 @@ static void message (const char * format, ...)
  case '8':                                           \
  case '9'
 
+/* The "e" in things like 1.0e9. This needs to be a separate case from
+   NUMBER_GRAMMAR. */
+
 #define EXP            \
     'e':               \
  case 'E'
+
+/* The digits from 0-9. JSON does not allow numbers of the form
+   000134, with leading zeros, so it is necessary to distinguish
+   digits which may be initial numbers from digits which may be parts
+   of a number. */
 
 #define DIGIT                                      \
     '0':                                           \
  case DIGIT19
 
-#define abcdef                                    \
-    'a':                                          \
- case 'b':                                        \
- case 'c':                                        \
- case 'd':                                        \
- case 'e':                                        \
+/* The following two macros are for hexadecimal digits. */
+
+#define abcdef \
+    'a':       \
+ case 'b':     \
+ case 'c':     \
+ case 'd':     \
+ case 'e':     \
  case 'f'
 
-#define ABCDEF                                       \
-    'A':                                             \
- case 'B':                                           \
- case 'C':                                           \
- case 'D':                                           \
- case 'E':                                           \
+#define ABCDEF \
+    'A':       \
+ case 'B':     \
+ case 'C':     \
+ case 'D':     \
+ case 'E':     \
  case 'F'
 
+/* This begins each block. */
+
 #define STATE(x)                                \
-    MESSAGE("state is now %s.\n", #x);          \
+    MESSAGE ("My state is now %s.\n", #x);	\
     x:                                          \
     c = * p;                                    \
     p++;                                        \
     switch (c) {                                \
  case 0:                                        \
- MESSAGE ("End of file.\n");                    \
+ MESSAGE ("End of the file.\n");		\
  return FILEEND;                               
 
 #define PUSH p--
 
+/* Return a token to the parser. */
+
 #define GOT(x)                                  \
-    MESSAGE("Got %d.\n", x);                    \
+    MESSAGE("I have got a valid token with id %d.\n",	\
+	    x);					\
     *json_ptr = p;                              \
     return x;
 
@@ -116,28 +155,22 @@ static void message (const char * format, ...)
 #define END(x)                                          \
     default:                                            \
     b->status = ERROR_ ## x;                            \
-    MESSAGE ("Failing lex stage with value %s\n",       \
-            #x);                                        \
+    MESSAGE ("Failing lex stage at character '%c',"	\
+	     " line %d, with value %s\n", c,		\
+	     b->line,					\
+	     #x);					\
     return -1;                                          \
 }
+
+/* End a transition table without a failure. */
+
+#define END_NO_DEFAULT }
 
 /* End a switch (transition table) without a failure. */
 
 #define CLOSE }
 
 #define BUFFER_SIZE 0x400
-
-#ifdef HEADER
-
-typedef struct buffer {
-    char * value;
-    int characters;
-    int allocated;
-    int line;
-    int /* json_parse_status */ status;
-} buffer_t;
-
-#endif
 
 static int add_value (buffer_t * b)
 {
@@ -219,33 +252,48 @@ buffer_add_unicode (buffer_t * b, int ucs2)
     }                                                                   \
     goto four_hex;
 
-int lexer (void * ignore, const char ** json_ptr, buffer_t * b)
+/* This is the lexer. */
+
+int lexer (void * ignore, const char ** json_ptr, json_parse_object * jpo_x)
 {
     const char * p = * json_ptr;
     char c;
     int hex_digits;
     int hex;
+    int num;
+    int minus;
+    int leading_zeros;
+    buffer_t * b = & jpo_x->buffer;
 
     if (! b->value) {
         add_value (b);
     }
 
+    num = 0;
+    minus = 0;
+    leading_zeros = 0;
+
+    /* This transition table parses the initial state. */
+
     STATE(initial);
     case WHITESPACE:
-        MESSAGE ("whitespace.\n");
+        MESSAGE ("Skipping whitespace.\n");
         goto initial;
     case GRAMMAR:
-        MESSAGE ("grammar: %c\n", c);
+        MESSAGE ("JSON grammar: '%c'\n", c);
         GOT (c);
-    case NUMBER_GRAMMAR:
+    case '.':
         ADD;
         GOT (c);
+    case '+':
+        goto initial;
     case EXP:
         ADD;
         GOT (e);
-    case DIGIT19:
-        ADD;
-        GOT (digit19);
+    case '-':
+    case DIGIT:
+        PUSH;
+        goto number;
     case '"':
         RESET;
         goto string;
@@ -254,6 +302,67 @@ int lexer (void * ignore, const char ** json_ptr, buffer_t * b)
     LITERAL ('f', false);
     LITERAL ('n', null);
     END(INITIAL);
+
+    /* This transition table parses numbers. */
+
+    STATE(number);
+
+    case '-':
+        ADD;
+        if (! minus) {
+            minus = 1;
+        }
+        else {
+            minus = 0;
+        }
+        goto number;
+
+    case '0':
+        if (! num) {
+            leading_zeros = 1;
+        }
+    case DIGIT19:
+        ADD;
+        if (! num) {
+            num = c - '0';
+            if (minus) {
+                num = - num;
+            }
+        }
+        else {
+            num *= 10;
+            num += c - '0';
+        }
+        goto number;
+
+    default:
+        PUSH;
+        jpo_x->integer = num;
+        if (minus) {
+            if (leading_zeros) {
+                GOT (nzinteger);
+            }
+            else {
+                GOT (ninteger);
+            }
+        }
+        else {
+            if (leading_zeros) {
+                if (num) {
+                    GOT (pzinteger);
+                }
+                else {
+                    GOT (zero);
+                }
+            }
+            else {
+                GOT (pinteger);
+            }
+        }
+    END_NO_DEFAULT
+
+	/* This transition table parses a string, which means
+	   something beginning with " and ending with ". */
 
     STATE(string);
     case '\\':
@@ -267,6 +376,10 @@ int lexer (void * ignore, const char ** json_ptr, buffer_t * b)
         goto string;
     CLOSE;
 
+    /* This transition table parses \ appearing in a string. For
+       everything except \u, that means adding one character to the
+       buffer. */
+
     STATE(string_escape);
     case '\\':
     case '/':
@@ -274,19 +387,19 @@ int lexer (void * ignore, const char ** json_ptr, buffer_t * b)
         ADD;
         goto string;
     case 'b':
-        ADDC (8);
+        ADDC ('\b');
         goto string;
     case 'f':
-        ADDC (12);
+        ADDC ('\f');
         goto string;
     case 'n':
-        ADDC (10);
+        ADDC ('\n');
         goto string;
     case 'r':
-        ADDC (13);
+        ADDC ('\r');
         goto string;
     case 't':
-        ADDC (9);
+        ADDC ('\t');
         goto string;
     case 'u':
         MESSAGE ("Looking for Unicode.\n");
@@ -294,6 +407,8 @@ int lexer (void * ignore, const char ** json_ptr, buffer_t * b)
         hex = 0;
         goto four_hex;
     END(ESCAPE);
+
+    /* This transition table parses anything like "\u3000". */
 
     STATE(four_hex);
     case DIGIT:

@@ -10,6 +10,18 @@
 /* From 'json_parse.c': */
 
 #line 6 "json_parse.c"
+typedef struct buffer {
+    /* The string itself. */
+    char * value;
+    /* The number of valid characters in the string. */
+    int characters;
+    /* The number of characters allocated for the string. */
+    int allocated;
+    /* The line number this string originates from. */
+    int line;
+    int /* json_parse_status */ status;
+}
+buffer_t;
 typedef enum {
     json_parse_ok,
     json_parse_fail,
@@ -39,6 +51,9 @@ typedef json_parse_status
 (*json_parse_create_sn)
 (json_parse_u_data, const char *, json_parse_new_u_obj);
 typedef json_parse_status 
+(*json_parse_create_n)
+(json_parse_u_data, int, json_parse_new_u_obj);
+typedef json_parse_status 
 (*json_parse_create_ao)
 (json_parse_u_data, json_parse_new_u_obj);
 typedef json_parse_status
@@ -53,6 +68,7 @@ typedef json_parse_status
 typedef struct {
     json_parse_create_sn string_create;
     json_parse_create_sn number_create;
+    json_parse_create_n integer_create;
     json_parse_create_ao array_create;
     json_parse_create_ao object_create;
     json_parse_create_ntf ntf_create;
@@ -64,24 +80,26 @@ typedef struct {
     json_parse_u_obj parse_result;
     /* Holder for the flex scanner. */
     void * scanner;
-    /* Buffer for reading strings in Flex. */
+    /* Buffer for reading strings. */
     buffer_t buffer;
+    /* integer number holder. */
+    int integer;
 }
 json_parse_object;
 
-#line 96 "json_parse.c"
+#line 117 "json_parse.c"
 extern const char * json_parse_status_messages[];
 
-#line 108 "json_parse.c"
+#line 129 "json_parse.c"
 void json_parse_init (json_parse_object * jpo );
 
-#line 114 "json_parse.c"
+#line 135 "json_parse.c"
 int json_parse (const char ** json , json_parse_object * jpo );
 
-#line 122 "json_parse.c"
+#line 146 "json_parse.c"
 void json_parse_free (json_parse_object * jpo );
 
-#line 133 "json_parse.c"
+#line 157 "json_parse.c"
 int json_parse_error (const char ** json_ptr , json_parse_object * jpo_x , const char * message );
 
 #endif /* CFH_JSON_PARSE_H */

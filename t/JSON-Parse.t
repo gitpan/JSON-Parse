@@ -6,10 +6,12 @@ use JSON::Parse qw/json_to_perl valid_json/;
 use utf8;
 
 #binmode STDOUT, ":utf8";
-my $jason = '{"bog":"log","frog":[1,2,3],"guff":{"x":"y","z":"monkey","t":[0,1,2.3,4,59999]}}';
+my $jason = <<'EOF';
+{"bog":"log","frog":[1,2,3],"guff":{"x":"y","z":"monkey","t":[0,1,2.3,4,59999]}}
+EOF
 my $x = gub ($jason);
-print $x->{guff}->{t}->[2], "\n";
-ok ($x->{guff}->{t}->[2] == 2.3, "Two point three");
+note ($x->{guff}->{t}->[2]);
+is ($x->{guff}->{t}->[2], 2.3, "Two point three");
 
 my $fleece = '{"凄い":"技", "tickle":"baby"}';
 my $y = gub ($fleece);

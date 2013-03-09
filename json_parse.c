@@ -1,9 +1,24 @@
-/* Copyright (c) 2010-2011 Ben Bullock (bkb@cpan.org). */
+/* Copyright (c) 2010-2013 Ben Bullock (bkb@cpan.org). */
 
 #include <stdio.h>
 #include <stdlib.h>
 
 #ifdef HEADER
+
+/* This is a string holder type. */
+
+typedef struct buffer {
+    /* The string itself. */
+    char * value;
+    /* The number of valid characters in the string. */
+    int characters;
+    /* The number of characters allocated for the string. */
+    int allocated;
+    /* The line number this string originates from. */
+    int line;
+    int /* json_parse_status */ status;
+}
+buffer_t;
 
 typedef enum {
     json_parse_ok,
@@ -43,6 +58,9 @@ typedef json_parse_status
 (*json_parse_create_sn)
 (json_parse_u_data, const char *, json_parse_new_u_obj);
 typedef json_parse_status 
+(*json_parse_create_n)
+(json_parse_u_data, int, json_parse_new_u_obj);
+typedef json_parse_status 
 (*json_parse_create_ao)
 (json_parse_u_data, json_parse_new_u_obj);
 typedef json_parse_status
@@ -58,6 +76,7 @@ typedef json_parse_status
 typedef struct {
     json_parse_create_sn string_create;
     json_parse_create_sn number_create;
+    json_parse_create_n integer_create;
     json_parse_create_ao array_create;
     json_parse_create_ao object_create;
     json_parse_create_ntf ntf_create;
@@ -69,15 +88,17 @@ typedef struct {
     json_parse_u_obj parse_result;
     /* Holder for the flex scanner. */
     void * scanner;
-    /* Buffer for reading strings in Flex. */
+    /* Buffer for reading strings. */
     buffer_t buffer;
+    /* integer number holder. */
+    int integer;
 }
 json_parse_object;
 
 #endif
 
-#include "lexer.h"
 #include "json_parse.h"
+#include "lexer.h"
 #include "json_parse_grammar.tab.h"
 
 const char * json_parse_status_messages[json_parse_n_statuses] = {
@@ -113,7 +134,10 @@ void json_parse_init (json_parse_object * jpo)
 int json_parse (const char ** json, json_parse_object * jpo)
 {
     int parser_status;
+    /* Make sure there is no error message lingering. */
     jpo->buffer.status = json_parse_ok;
+    /* Set the initial line number to one. */
+    jpo->buffer.line = 1;
     parser_status = json_parse_parse (json, jpo);
     return parser_status;
 }
