@@ -19,12 +19,6 @@ CODE:
 OUTPUT:
 	RETVAL
 
-SV * json_file_to_perl (char * file_name)
-CODE:
-	RETVAL = json_argo_file_to_perl (file_name);
-OUTPUT:
-	RETVAL
-
 int valid_json (SV * json)
 CODE:
 	RETVAL = json_argo_valid_json (json);

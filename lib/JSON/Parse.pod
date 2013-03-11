@@ -67,7 +67,7 @@ returned:
     my $p = json_file_to_perl ('filename');
 
 This is exactly the same as L</json_to_perl> except that it works on a
-file name.
+file name. The file must be in UTF-8.
 
 =head2 valid_json
 

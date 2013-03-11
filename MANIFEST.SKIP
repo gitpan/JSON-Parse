@@ -14,3 +14,4 @@ JSON-Parse-[0-9\.]+(/.*|\.tar\.gz$)
 ^Makefile$
 ^MYMETA\.(json|yml)$
 ^errors/.*$
+.*\.pod\.tmpl$

@@ -1,5 +1,5 @@
 ---
-abstract: unknown
+abstract: 'Convert JSON into a Perl variable'
 author:
   - 'Ben Bullock <bkb@cpan.org>'
 build_requires:
@@ -18,4 +18,7 @@ no_index:
     - t
     - inc
 requires: {}
-version: 0.16
+resources:
+  bugtracker: https://github.com/benkasminbullock/JSON-Parse/issues
+  repository: https://github.com/benkasminbullock/JSON-Parse
+version: 0.17

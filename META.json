@@ -1,5 +1,5 @@
 {
-   "abstract" : "unknown",
+   "abstract" : "Convert JSON into a Perl variable",
    "author" : [
       "Ben Bullock <bkb@cpan.org>"
    ],
@@ -35,5 +35,13 @@
       }
    },
    "release_status" : "stable",
-   "version" : "0.16"
+   "resources" : {
+      "bugtracker" : {
+         "web" : "https://github.com/benkasminbullock/JSON-Parse/issues"
+      },
+      "repository" : {
+         "url" : "https://github.com/benkasminbullock/JSON-Parse"
+      }
+   },
+   "version" : "0.17"
 }

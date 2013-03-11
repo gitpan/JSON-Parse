@@ -29,6 +29,7 @@ typedef enum {
     json_parse_no_input_fail,
     json_parse_bad_start_fail,
     json_parse_unknown_escape_fail,
+    json_parse_control_character_fail,
     json_parse_n_statuses,
 } 
 json_parse_status;
@@ -106,6 +107,7 @@ const char * json_parse_status_messages[json_parse_n_statuses] = {
     "The JSON string is empty",
     "The JSON did not start with '{' or '['",
     "There is an unknown escape sequence in the JSON",
+    "There is a control character in a string in the JSON",
 };
 
 /* This declares the parsing function in

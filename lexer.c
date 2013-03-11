@@ -155,6 +155,39 @@ static void message (const char * format, ...)
     return -1;                                          \
 }
 
+#define BAD_BOYS					\
+    1:							\
+ case 2:						\
+ case 3:						\
+ case 4:						\
+ case 5:						\
+ case 6:						\
+ case 7:						\
+ case 8:						\
+ case 9:						\
+ case 10:						\
+ case 11:						\
+ case 12:						\
+ case 13:						\
+ case 14:						\
+ case 15:						\
+ case 16:						\
+ case 17:						\
+ case 18:						\
+ case 19:						\
+ case 20:						\
+ case 21:						\
+ case 22:						\
+ case 23:						\
+ case 24:						\
+ case 25:						\
+ case 26:						\
+ case 27:						\
+ case 28:						\
+ case 29:						\
+ case 30:						\
+ case 31
+
 /* End a switch (transition table) without a failure. */
 
 #define END_NO_DEFAULT }
@@ -166,9 +199,6 @@ static int add_value (buffer_t * b)
     if (b->value == 0) {
         b->allocated = BUFFER_SIZE;
         b->value = malloc (b->allocated);
-        if (! b->value) {
-            return 0;
-        }
     }
     else {
         b->allocated *= 2;
@@ -187,6 +217,7 @@ static int add_value (buffer_t * b)
     if (b->characters >= b->allocated) {         \
 	int ok;					 \
         ok = add_value (b);			 \
+	/* Cope with malloc failure. */		 \
 	if (! ok) {				 \
 	    b->status = json_parse_memory_fail;	 \
 	    return -1;				 \
@@ -194,6 +225,8 @@ static int add_value (buffer_t * b)
     }
 
 #define ADD ADDC(c)
+
+/* Reset the lexer. */
 
 #define RESET                                   \
     if (! b->value) {                           \
@@ -231,7 +264,7 @@ buffer_add_unicode (buffer_t * b, int ucs2)
         return -1;
     }
     for (i = 0; i < utf8_bytes; i++) {
-        ADDC(utf8[i]);
+        ADDC (utf8[i]);
     }
     return 0;
 }
@@ -270,12 +303,15 @@ int lexer (void * ignore, const char ** json_ptr, json_parse_object * jpo_x)
     /* This transition table parses the initial state. */
 
     STATE(initial);
+
     case WHITESPACE:
         MESSAGE ("Skipping whitespace.\n");
         goto initial;
+
     case GRAMMAR:
         MESSAGE ("JSON grammar: '%c'\n", c);
         GOT (c);
+
     case '.':
         ADD;
         GOT (c);
@@ -289,10 +325,12 @@ int lexer (void * ignore, const char ** json_ptr, json_parse_object * jpo_x)
     case EXP:
         ADD;
         GOT (e);
+
     case '-':
     case DIGIT:
         PUSH;
         goto number;
+
     case '"':
         RESET;
         goto string;
@@ -343,6 +381,7 @@ int lexer (void * ignore, const char ** json_ptr, json_parse_object * jpo_x)
 	   the bits and pieces accumulated so far. */
 
         PUSH;
+
         jpo_x->integer = num;
         if (minus) {
             if (leading_zeros) {
@@ -380,6 +419,15 @@ int lexer (void * ignore, const char ** json_ptr, json_parse_object * jpo_x)
         MESSAGE ("End of string.\n");
         GOT_VALUE (STRING);
 
+	/* Bug: this does not check the contents of the string to make
+	   sure they are definitely valid JSON string characters. */
+	
+    case BAD_BOYS:
+	b->status = json_parse_control_character_fail;
+	/* Set the pointer to the offending byte. */
+	*json_ptr = p - 1;
+	return -1;
+
     default:
         ADD;
         goto string;
@@ -394,6 +442,7 @@ int lexer (void * ignore, const char ** json_ptr, json_parse_object * jpo_x)
     case '\\':
     case '/':
     case '"':
+	/* Add the character itself. */
         ADD;
         goto string;
     case 'b':

@@ -9,7 +9,6 @@ lexer.c
 lexer.h
 lib/JSON/Parse.pm
 lib/JSON/Parse.pod
-lib/JSON/Parse.pod.tmpl
 Makefile.PL
 MANIFEST			This list of files
 MANIFEST.SKIP

@@ -1,3 +1,13 @@
+0.17
+
+* Added the github repository to Makefile.PL.
+
+* Added error for control characters in JSON (0x01 - 0x1F).
+
+* Dumped the XS/mmap based version of "json_file_to_perl" and rewrote
+  in Perl for the sake of all the people whose version of mmap is
+  "interesting".
+
 0.16
 
 * Documented the json_file_to_perl routine.
