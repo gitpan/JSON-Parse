@@ -1,5 +1,3 @@
-#include <sys/stat.h>
-#include <sys/mman.h> 
 #include <errno.h>
 #include <string.h>
 #include <ctype.h>
@@ -203,44 +201,6 @@ json_argo_hash_add (void * vdata, void * vhash, void * vleft, void * vright)
 	}								\
 	return & PL_sv_undef;						\
     }
-
-static void
-mmap_file (const char * file_name, const char ** json_bytes_ptr,
-           unsigned int * json_length_ptr)
-{
-    int fd;
-    struct stat s;
-    int json_length;
-    int status;
-    const char * json_bytes;
-
-    fd = open (file_name, O_RDONLY);
-    if (fd < 0) {
-        croak ("Can't open %s: %s", file_name, strerror (errno));
-    }
-    status = fstat (fd, & s);
-    if (status < 0) {
-        croak ("Can't fstat %s: %s", file_name, strerror (errno));
-    }
-    json_length = s.st_size;
-    json_bytes = mmap (0, json_length, PROT_READ, 0, fd, 0);
-    if (json_bytes == MAP_FAILED) {
-        croak ("mmap %s failed: %s", file_name, strerror (errno));
-    }
-    * json_length_ptr = json_length;
-    * json_bytes_ptr = json_bytes;
-}
-
-static SV *
-json_argo_parse_file (json_parse_object * jpo, const char * file_name)
-{
-    const char * json_bytes;
-    const char * json_start;
-    json_parse_status status;
-    unsigned int json_length;
-    mmap_file (file_name, & json_bytes, & json_length);
-    JSON_PARSE;
-}
 
 /* Given JSON in a string, turn it in to Perl. */
 

@@ -9,7 +9,7 @@
 
 /* From 'json_argo.c': */
 
-#line 353 "json_argo.c"
+#line 313 "json_argo.c"
 int json_argo_valid_parse (json_parse_object * jpo , SV * json_sv );
 
 #endif /* CFH_JSON_ARGO_H */
