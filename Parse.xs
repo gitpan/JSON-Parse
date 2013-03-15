@@ -19,7 +19,7 @@ CODE:
 OUTPUT:
 	RETVAL
 
-int valid_json (SV * json)
+int valid_json (SV * json = &PL_sv_undef)
 CODE:
 	RETVAL = json_argo_valid_json (json);
 OUTPUT:

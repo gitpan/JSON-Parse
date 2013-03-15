@@ -1,3 +1,11 @@
+0.19
+
+* Bug fix of minor bug involving prototypes.
+
+0.18
+
+* Threw out mmap for the sake of Linux/Windows.
+
 0.17
 
 * Added the github repository to Makefile.PL.

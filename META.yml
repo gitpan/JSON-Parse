@@ -21,4 +21,4 @@ requires: {}
 resources:
   bugtracker: https://github.com/benkasminbullock/JSON-Parse/issues
   repository: https://github.com/benkasminbullock/JSON-Parse
-version: 0.18
+version: 0.19

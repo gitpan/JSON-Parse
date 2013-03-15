@@ -343,16 +343,3 @@ json_argo_valid_json (SV * json_sv)
     return r;
 }
 
-static SV *
-json_argo_file_to_perl (const char * file_name)
-{
-    INIT_JPO;
-    SV * r;
-
-    //    json_argo_data.verbose = 1;
-    json_parse_init (& jpo);
-
-    r = json_argo_parse_file (& jpo, file_name);
-    json_parse_free (& jpo);
-    return r;
-}
