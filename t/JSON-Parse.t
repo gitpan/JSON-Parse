@@ -1,6 +1,6 @@
 use warnings;
 use strict;
-use Test::More tests => 28;
+use Test::More tests => 27;
 BEGIN { use_ok('JSON::Parse') };
 use JSON::Parse qw/json_to_perl valid_json/;
 use utf8;
@@ -29,7 +29,6 @@ ok (valid_json ($argonauts), "Valid OK JSON");
 
 my $p = json_to_perl (undef);
 ok (! defined $p, "Undef returns undef");
-ok (! valid_json (undef), "! Valid undef");
 my $Q = json_to_perl ('');
 ok (! defined $Q, "Empty string returns undef");
 ok (! valid_json (''), "! Valid empty string");
