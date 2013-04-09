@@ -258,27 +258,6 @@ JSON format which Perl cannot understand.
 L</valid_json> does not produce error messages. L</json_to_perl> may
 produce the following:
 
-
-=over
-
-=item * Out of memory
-
-=item * The JSON is not grammatically correct
-
-=item * There are stray characters in the JSON
-
-=item * There is a badly-formed \u Unicode escape in the JSON
-
-=item * The JSON string is empty
-
-=item * The JSON did not start with '{' or '['
-
-=item * There is an unknown escape sequence in the JSON
-
-=back
-
-
-
 Error messages have the line number and the byte number of the input
 which caused the problem.
 

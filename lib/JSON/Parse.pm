@@ -1,25 +1,34 @@
+=encoding UTF-8
+
+=head1 NAME
+
+Json3 - abstract here.
+
+=head1 SYNOPSIS
+
+    use Json3;
+
+=head1 DESCRIPTION
+
+=head1 FUNCTIONS
+
+=cut
 package JSON::Parse;
 require Exporter;
 @ISA = qw(Exporter);
-@EXPORT_OK = qw/json_to_perl valid_json json_file_to_perl/;
+@EXPORT_OK = qw/parse_json/;
+%EXPORT_TAGS = (
+    all => \@EXPORT_OK,
+);
 use warnings;
 use strict;
-our $VERSION = '0.19_01';
-use XSLoader;
-XSLoader::load 'JSON::Parse', $VERSION;
 use Carp;
+our $VERSION = '0.19_02';
+require XSLoader;
+XSLoader::load (__PACKAGE__, $VERSION);
 
-sub json_file_to_perl
-{
-    my ($file_name) = @_;
-    my $json = '';
-    open my $in, "<:encoding(utf8)", $file_name or croak $!;
-    while (<$in>) {
-	$json .= $_;
-    }
-    close $in or croak $!;
-    return json_to_perl ($json);
-}
+our $true = 1;
+our $false = 0;
+our $null;
 
 1;
-

@@ -1,29 +1,10 @@
-Changes
-json_argo.c
-json_argo.h
-json_parse.c
-json_parse.h
-json_parse_grammar.tab.c
-json_parse_grammar.tab.h
-lexer.c
-lexer.h
+Json3-perl.c
+Json3.xs
 lib/JSON/Parse.pm
 lib/JSON/Parse.pod
 Makefile.PL
 MANIFEST			This list of files
 MANIFEST.SKIP
-Parse.xs
-ppport.h
-src/json_parse_grammar.y
-t/JSON-Parse.t
-t/numbers.t
-t/read-file.t
-t/syntax-error-1.json
-t/syntax.t
-t/test-errors.t
-t/test.json
-t/whitespace.t
-unicode.c
-unicode.h
+t/Json3.t
 META.yml                                 Module YAML meta-data (added by MakeMaker)
 META.json                                Module JSON meta-data (added by MakeMaker)
