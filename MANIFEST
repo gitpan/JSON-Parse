@@ -1,3 +1,23 @@
+benchmarks/bench
+benchmarks/big-ints.json
+benchmarks/cpantesters.json
+benchmarks/escape-words.json
+benchmarks/exp-plus.json
+benchmarks/exp.json
+benchmarks/floating.json
+benchmarks/letters.json
+benchmarks/literals.json
+benchmarks/long.json
+benchmarks/numbers-object.json
+benchmarks/sentences-object.json
+benchmarks/small-ints.json
+benchmarks/url-numbers.json
+benchmarks/url-short.json
+benchmarks/url.json
+benchmarks/words-array.json
+benchmarks/words-object-20.json
+benchmarks/words-object.json
+benchmarks/words.json
 Json3-perl.c
 Json3.xs
 lib/JSON/Parse.pm
@@ -5,6 +25,9 @@ lib/JSON/Parse.pod
 Makefile.PL
 MANIFEST			This list of files
 MANIFEST.SKIP
+t/JSON-Parse.t
 t/Json3.t
+t/numbers.t
+t/test.json
 META.yml                                 Module YAML meta-data (added by MakeMaker)
 META.json                                Module JSON meta-data (added by MakeMaker)
