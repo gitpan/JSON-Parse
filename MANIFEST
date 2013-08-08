@@ -18,6 +18,7 @@ benchmarks/words-array.json
 benchmarks/words-object-20.json
 benchmarks/words-object.json
 benchmarks/words.json
+Changes
 Json3-perl.c
 Json3.xs
 lib/JSON/Parse.pm
