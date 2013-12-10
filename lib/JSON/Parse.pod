@@ -43,8 +43,7 @@ This function converts JSON into a Perl structure, either an array
 reference or a hash reference.
 
 If the first argument does not contain a valid JSON text,
-C<parse_json> throws a fatal error. See L</DIAGNOSTICS> for the
-possible error messages.
+C<parse_json> throws a fatal error.
 
 If the argument contains valid JSON, the return value is either a hash
 or an array reference. If the input JSON text is a serialized object,
@@ -76,7 +75,11 @@ file name. The file must be in UTF-8.
         # do something
     }
 
-C<Valid_json> returns I<1> if its argument is valid JSON and I<0> if not.
+C<Valid_json> returns I<1> if its argument is valid JSON and I<0> if
+not. It also returns 0 if the input is undefined or the empty string.
+
+This is a high-speed validator which runs between three and ten times
+faster than L</parse_json>.
 
 =head1 Mapping from JSON to Perl
 
@@ -118,6 +121,10 @@ but
     my $p = parse_json ($ebi);
     print utf8::is_utf8 ($p->[0]);
     # Prints nothing.
+
+If Perl thinks the input string is Unicode, escapes like \u0040 are
+converted into the equivalent UTF-8 bytes. If Perl doesn't think the
+input is Unicode, the escapes are passed through unchanged.
 
 =head2 JSON arrays
 
@@ -228,6 +235,21 @@ the parsing into an C<eval> block:
     if ($@) {                    
         # handle error           
     }
+
+=head1 SPEED
+
+On the author's computer, the module's speed of parsing is
+approximately the same or slightly faster than L<JSON::XS>, with small
+variations depending on the type of input. Some special types of
+input, such as floating point numbers containing an exponential part,
+like "1e09", are about two or three times faster to parse with this
+module than with L<JSON::XS>.
+
+For validation, L</valid_json> is faster than any other module known
+to the author. 
+
+There is some benchmarking code in the github repository under the
+directory "benchmarks" for those wishing to test these claims.
 
 =head1 SEE ALSO
 

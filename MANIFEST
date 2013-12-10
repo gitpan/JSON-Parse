@@ -1,24 +1,6 @@
-benchmarks/bench
-benchmarks/big-ints.json
-benchmarks/cpantesters.json
-benchmarks/escape-words.json
-benchmarks/exp-plus.json
-benchmarks/exp.json
-benchmarks/floating.json
-benchmarks/letters.json
-benchmarks/literals.json
-benchmarks/long.json
-benchmarks/numbers-object.json
-benchmarks/sentences-object.json
-benchmarks/small-ints.json
-benchmarks/url-numbers.json
-benchmarks/url-short.json
-benchmarks/url.json
-benchmarks/words-array.json
-benchmarks/words-object-20.json
-benchmarks/words-object.json
-benchmarks/words.json
 Changes
+Json3-entry-points.c
+Json3-perl-common.c
 Json3-perl.c
 Json3.xs
 lib/JSON/Parse.pm
@@ -32,5 +14,9 @@ t/Json3.t
 t/numbers.t
 t/read-file.t
 t/test.json
+t/unicode.t
+t/valid-json.t
+unicode.c
+unicode.h
 META.yml                                 Module YAML meta-data (added by MakeMaker)
 META.json                                Module JSON meta-data (added by MakeMaker)

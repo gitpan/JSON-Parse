@@ -31,10 +31,12 @@
          }
       },
       "runtime" : {
-         "requires" : {}
+         "requires" : {
+            "perl" : "5.008009"
+         }
       }
    },
-   "release_status" : "stable",
+   "release_status" : "testing",
    "resources" : {
       "bugtracker" : {
          "web" : "https://github.com/benkasminbullock/JSON-Parse/issues"
@@ -43,5 +45,5 @@
          "url" : "https://github.com/benkasminbullock/JSON-Parse"
       }
    },
-   "version" : "0.24"
+   "version" : "0.24_01"
 }

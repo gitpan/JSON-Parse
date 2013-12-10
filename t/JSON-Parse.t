@@ -4,6 +4,12 @@ use Test::More;
 use JSON::Parse qw/json_to_perl valid_json/;
 use utf8;
 
+binmode STDOUT, ":utf8";
+my $builder = Test::More->builder;
+binmode $builder->output,         ":utf8";
+binmode $builder->failure_output, ":utf8";
+binmode $builder->todo_output,    ":utf8";
+
 #binmode STDOUT, ":utf8";
 my $jason = <<'EOF';
 {"bog":"log","frog":[1,2,3],"guff":{"x":"y","z":"monkey","t":[0,1,2.3,4,59999]}}
@@ -39,14 +45,8 @@ eval {
 ok ($@, "found error");
 #like ($@, qr/end of the file was reached/, "Error message OK");
 ok (! valid_json ($n), "! Not valid missing end }");
-TODO: {
-    local $TODO = '\u not implemented';
-    my $m = '{"骪":"\u9aaa"}';
-    my $ar = gub ($m);
-    ok (defined $ar, "Unicode \\uXXXX parsed");
-    is ($ar->{骪}, '骪', "Unicode \\uXXXX parsed correctly");
-    ok (valid_json ($m), "Valid good JSON");
-};
+
+
 my $bad1 = '"bad":"city"}';
 $@ = undef;
 eval {
