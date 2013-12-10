@@ -93,9 +93,18 @@ typedef struct parser {
     /* Unicode? */
 
     unsigned int unicode : 1;
-    
+
+    /* Force unicode. This happens when we hit "\uxyzy". */
+
+    unsigned int force_unicode : 1;
 }
 parser_t;
+
+#ifdef __GNUC__
+#define INLINE inline
+#else
+#define INLINE
+#endif /* def __GNUC__ */
 
 /* All instances of JSON literals are pointed to the following. */
 
@@ -103,6 +112,26 @@ static SV * json_true;
 static SV * json_false;
 static SV * json_null;
 static SV * empty_string;
+
+/* The size of the buffer for printing errors. */
+
+#define BURGERSIZE 0x1000
+
+/* Error fallthrough. This takes the error and sends it to "croak". */
+
+static INLINE void failburger (parser_t * parser, const char * format, ...)
+{
+    char buffer[BURGERSIZE];
+    va_list a;
+    va_start (a, format);
+    vsnprintf (buffer, BURGERSIZE, format, a);
+    va_end (a);
+    croak ("Line %d, byte %d/%d: %s", parser->line,
+	   parser->end - parser->input,
+	   parser->length, buffer);
+}
+
+#undef BURGERSIZE
 
 /* Get more memory for "parser->buffer". */
 
@@ -117,7 +146,57 @@ expand_buffer (parser_t * parser, int length)
 	else {
 	    parser->buffer = malloc (parser->buffer_size);
 	}
+	if (! parser->buffer) {
+	    failburger (parser, "out of memory");
+	}
     }
+}
+
+static INLINE char *
+do_unicode_escape (parser_t * parser, char * p, char ** b_ptr)
+{
+    int k;
+    char unibuf[5];
+    int unicode;
+    int plus;
+    for (k = 0; k < strlen ("ABCD"); k++) {
+	unibuf[k] = *((p)++);
+    }
+    unibuf[4] = '\0';
+    unicode = strtol (unibuf, 0, 16);
+    plus = ucs2_to_utf8 (unicode, *b_ptr);
+    if (plus == UNICODE_BAD_INPUT) {
+	failburger (parser,
+		    "bad unicode escape "
+		    "'\\u%s'",
+		    unibuf);
+    }
+    else if (plus == UNICODE_SURROGATE_PAIR) {
+	int unicode2;
+	int plus2;
+	if (p[0] == '\\' && p[1] == 'u') {
+	    for (k = 0; k < strlen ("ABCD"); k++) {
+		unibuf[k] = p[k + 2];
+	    }
+	    unibuf[4] = '\0';
+	    unicode2 = strtol (unibuf, 0, 16);
+	    plus2 = surrogate_to_utf8 (unicode, unicode2, * b_ptr);
+	    if (plus2 <= 0) {
+		failburger (parser, "surrogate pair unreadable");
+	    }
+	    p += 6;
+	    * b_ptr += plus2;
+	    return p;
+	}
+	else {
+	    failburger (parser, "second half of surrogate pair not found");
+	}
+    }
+    else if (plus <= 0) {
+	failburger (parser, "error decoding \\u%s\n", unibuf);
+    }
+    * b_ptr += plus;
+    return p;
 }
 
 /* Handle backslash escapes. */
@@ -152,65 +231,15 @@ expand_buffer (parser_t * parser, int length)
 	break;						\
 							\
     case 'u':						\
-	if (parser->unicode) {				\
-	    int k;					\
-	    char unibuf[5];				\
-	    int unicode;				\
-	    int plus;					\
-	    for (k = 0; k < strlen ("ABCD"); k++) {	\
-		unibuf[k] = *((p)++);			\
-	    }						\
-	    unibuf[4] = '\0';				\
-	    unicode = strtol (unibuf, 0, 16);		\
-	    plus = ucs2_to_utf8 (unicode, b);		\
-	    if (plus == -1) {				\
-		failburger (parser,			\
-			    "bad unicode escape "	\
-			    "'\\u%s'",			\
-			    unibuf);			\
-	    }						\
-	    b += plus;					\
-	}						\
-	else {						\
-	    /* Copy it. */				\
-	    int k;					\
-	    *b++ = '\\';				\
-	    *b++ = c;					\
-	    for (k = 0; k < strlen ("ABCD"); k++) {	\
-		*b++ = *((p)++);			\
-	    }						\
+	p = do_unicode_escape (parser, p, & b);		\
+	if (! parser->unicode) {			\
+	    parser->force_unicode = 1;			\
 	}						\
 	break;						\
 							\
     default:						\
 	failburger (parser, "Unknown escape \\%c", c);	\
     }
-
-#ifdef __GNUC__
-#define INLINE inline
-#else
-#define INLINE
-#endif /* def __GNUC__ */
-
-/* The size of the buffer for printing errors. */
-
-#define BURGERSIZE 0x1000
-
-/* Error fallthrough. This takes the error and sends it to "croak". */
-
-static INLINE void failburger (parser_t * parser, const char * format, ...)
-{
-    char buffer[BURGERSIZE];
-    va_list a;
-    va_start (a, format);
-    vsnprintf (buffer, BURGERSIZE, format, a);
-    va_end (a);
-    croak ("Line %d, byte %d/%d: %s", parser->line,
-	   parser->end - parser->input,
-	   parser->length, buffer);
-}
-
-#undef BURGERSIZE
 
 /* Resolve "s" by converting escapes into the appropriate things. Put
    the result into "parser->buffer". The return value is the length of
@@ -306,7 +335,7 @@ get_string (parser_t * parser)
 
     if (! parser->buffer) {
 	expand_buffer (parser, 0x1000);
-    } 
+    }
     b = parser->buffer;
     while ((c = *parser->end++)) {
 	switch (c) {

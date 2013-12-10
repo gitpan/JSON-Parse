@@ -82,6 +82,9 @@ string.
 This is a high-speed validator which runs between three and ten times
 faster than L</parse_json>.
 
+If you want the error messages where the JSON is invalid, you may find
+L</validate_json> useful.
+
 =head2 validate_json
 
     use JSON::Parse 'validate_json';
@@ -104,16 +107,21 @@ JSON elements are mapped to Perl as follows:
 =head2 JSON numbers
 
 JSON numbers become Perl numbers, either integers or double-precision
-floating point numbers.
+floating point numbers, or possibly strings containing the number if
+parsing of a number by the usual methods fails somehow.
+
+JSON does not allow leading zeros, or leading plus signs, so numbers
+like I<+100> or I<0123> will cause an error.
 
 =head2 JSON strings
 
 JSON strings become Perl strings. The JSON escape characters such as
 \t for the tab character (see section 2.5 of L</RFC 4627>) are mapped
-to the equivalent ASCII character. If the input string is marked as
-Unicode, Unicode escape characters of the form \uXXXX (see page three
-of L</RFC 4627>) are mapped to UTF-8. If the input string is not
-marked as Unicode, they are left untouched.
+to the equivalent ASCII character. 
+
+If the input string is marked as Unicode, Unicode escape characters of
+the form \uXXXX (see page three of L</RFC 4627>) are mapped to
+UTF-8. It also handles surrogate pairs.
 
 =head3 Handling of Unicode
 
@@ -138,9 +146,17 @@ but
     print utf8::is_utf8 ($p->[0]);
     # Prints nothing.
 
-If Perl thinks the input string is Unicode, escapes like \u0040 are
-converted into the equivalent UTF-8 bytes. If Perl doesn't think the
-input is Unicode, the escapes are passed through unchanged.
+Regardless of whether Perl thinks the input string is Unicode, escapes
+like \u87f9 are converted into the equivalent UTF-8 bytes and the
+particular string in which they occur is marked as a character string:
+
+    no utf8;
+    # 蟹
+    my $kani = '["\u87f9"]';
+    my $p = parse_json ($kani);
+    print utf8::is_utf8 ($p->[0]);
+    # Prints 1, because it's upgraded regardless of the input string's
+    # flags.
 
 =head2 JSON arrays
 

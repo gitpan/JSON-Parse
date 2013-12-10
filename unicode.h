@@ -11,25 +11,31 @@
 
 #line 6 "unicode.c"
 #define UTF8_MAX_LENGTH 4
+#define UNICODE_BAD_INPUT -1
+#define UNICODE_SURROGATE_PAIR -2
+#define UNICODE_NOT_SURROGATE_PAIR -3
 
-#line 17 "unicode.c"
+#line 20 "unicode.c"
 int utf8_to_ucs2 (const unsigned char * input , const unsigned char ** end_ptr );
 
-#line 61 "unicode.c"
+#line 64 "unicode.c"
 int ucs2_to_utf8 (int ucs2 , unsigned char * utf8 );
 
-#line 91 "unicode.c"
+#line 102 "unicode.c"
+int surrogate_to_utf8 (int first , int second , unsigned char * utf8 );
+
+#line 122 "unicode.c"
 int unicode_chars_to_bytes (const unsigned char * utf8 , int n_chars );
 
-#line 110 "unicode.c"
+#line 141 "unicode.c"
 int unicode_count_chars (const unsigned char * utf8 );
 
-#line 134 "unicode.c"
+#line 165 "unicode.c"
 
 #ifdef TEST
 void print_bytes (const unsigned char * bytes );
 
-#line 144 "unicode.c"
+#line 175 "unicode.c"
 void test_ucs2_to_utf8 (const unsigned char * input );
 
 #endif /* def TEST */

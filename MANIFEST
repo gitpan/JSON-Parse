@@ -8,6 +8,7 @@ lib/JSON/Parse.pod
 Makefile.PL
 MANIFEST			This list of files
 MANIFEST.SKIP
+perl5.18.1.core
 README
 t/JSON-Parse.t
 t/Json3.t

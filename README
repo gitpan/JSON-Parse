@@ -6,7 +6,7 @@
                                                             
 
 
-This is the README for JSON::Parse version 0.24_02.
+This is the README for JSON::Parse version 0.24_03.
 
 JSON::Parse is a "module" for the Perl computer programming language, a library
 of computer code to install on a computer.  This document contains four
@@ -98,6 +98,6 @@ repository on github at
 
 -----------------------------------------------------------------------------
 
-This README was written on Tue Dec 10 16:09:10 2013.
+This README was written on Tue Dec 10 18:53:58 2013.
 
 -----------------------------------------------------------------------------

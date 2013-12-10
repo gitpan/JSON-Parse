@@ -275,8 +275,9 @@ PREFIX(string) (parser_t * parser)
  string_done:
 
 #ifdef PERLING
-    if (parser->unicode) {
+    if (parser->unicode || parser->force_unicode) {
 	SvUTF8_on (string);
+	parser->force_unicode = 0;
     }
 #endif
 
