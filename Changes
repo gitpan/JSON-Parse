@@ -1,8 +1,9 @@
-0.24_01 2013-12-10
+0.24_02 2013-12-10
 
 * Fix bug where missing commas were not detected.
 * Now parses \uXXXX constructions.
-* "valid_json" no longer just a cheat, now a hyperfast validator.
+* "valid_json" now back to being a fast validator.
+* Add new "validate_json", a fast, exception throwing validator.
 
 0.24 2013-11-27
 

@@ -6,7 +6,7 @@
                                                             
 
 
-This is the README for JSON::Parse version 0.24_01.
+This is the README for JSON::Parse version 0.24_02.
 
 JSON::Parse is a "module" for the Perl computer programming language, a library
 of computer code to install on a computer.  This document contains four
@@ -69,11 +69,11 @@ If you have the App::cpanminus installer, you may prefer
 
     cpanm JSON::Parse
 
-To install the module from the source file, JSON-Parse-0.24_01.tar.gz, follow
+To install the module from the source file, JSON-Parse-0.24_02.tar.gz, follow
 this sequence of commands:
 
-    tar xfz JSON-Parse-0.24_01.tar.gz
-    cd JSON-Parse-0.24_01
+    tar xfz JSON-Parse-0.24_02.tar.gz
+    cd JSON-Parse-0.24_02
     perl Makefile.PL
     make
     make install
@@ -98,6 +98,6 @@ repository on github at
 
 -----------------------------------------------------------------------------
 
-This README was written on Tue Dec 10 14:49:29 2013.
+This README was written on Tue Dec 10 16:09:10 2013.
 
 -----------------------------------------------------------------------------
