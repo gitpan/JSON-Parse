@@ -12,6 +12,7 @@ perl5.18.1.core
 README
 t/JSON-Parse.t
 t/Json3.t
+t/lib/JSON/Parse.pod
 t/numbers.t
 t/read-file.t
 t/test.json
