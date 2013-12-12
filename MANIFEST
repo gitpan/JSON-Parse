@@ -13,9 +13,13 @@ t/JSON-Parse.t
 t/Json3.t
 t/numbers.t
 t/read-file.t
+t/syntax-error-1.json
+t/syntax.t
+t/test-empty-string.t
 t/test.json
 t/unicode.t
 t/valid-json.t
+t/whitespace.t
 unicode.c
 unicode.h
 META.yml                                 Module YAML meta-data (added by MakeMaker)

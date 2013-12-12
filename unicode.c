@@ -100,7 +100,6 @@ int ucs2_to_utf8 (int ucs2, unsigned char * utf8)
 
 int surrogate_to_utf8 (int hi, int lo, unsigned char * utf8)
 {
-    int value;
     int X, W, U, C;
     if (hi < 0xD800 || hi > 0xDFFF) {
 	/* Not surrogate pair. */
@@ -111,7 +110,7 @@ int surrogate_to_utf8 (int hi, int lo, unsigned char * utf8)
 	return UNICODE_NOT_SURROGATE_PAIR;
     }
     /* http://www.unicode.org/faq/utf_bom.html#utf16-3 */
-    X = (hi & ((1 << 6) -1)) << 10 | lo & ((1 << 10) -1);
+    X = ((hi & ((1 << 6) -1)) << 10) | (lo & ((1 << 10) -1));
     W = (hi >> 6) & ((1 << 5) - 1);
     U = W + 1;
     C = U << 16 | X;
