@@ -63,6 +63,8 @@ PREFIX(number) (parser_t * parser)
 
     int expminus;
 
+    int newexp;
+
     /* End marker for strtod/strtol. */
 
     char * end;
@@ -89,18 +91,30 @@ PREFIX(number) (parser_t * parser)
     expminus = 0;
     guess = 0;
     zero = 0;
+    newexp = 0;
 
     parser->end--;
     start = parser->end;
 
+#define FAILNUMBER(err)				\
+    parser->bad_byte = parser->end - 1;		\
+    parser->error = json_error_ ## err;		\
+    parser->bad_type = json_number;		\
+    parser->bad_beginning = start;		\
+    failbadinput (parser)
+
  number_start:
 
-    switch (c = *parser->end++) {
+    switch (NEXTBYTE) {
 
     case '.':
 
 	if (dot) {
-	    failburger (parser, "Too many decimal points");
+	    FAILNUMBER (too_many_decimal_points);
+	}
+	if (exp || (! zero && ! guess)) {
+	    parser->expected = XDIGIT | XMINUS;
+	    FAILNUMBER (unexpected_character);
 	}
 	dot = 1;
 	goto number_start;
@@ -115,30 +129,27 @@ PREFIX(number) (parser_t * parser)
 	   followed by a plus or minus sign." (quotes from Section 2.4
 	   of RFC 4627, the JSON standard.) */
 
-	if (! exp) {
-	    failburger (parser, "Plus outside exponential");
-	}
-
-	/* Two pluses in a row, "++". */
-
-	if (plus) {
-	    failburger (parser, "Double plus");
+	if (! newexp) {
+	    parser->expected = XDIGIT | XDOT | XMINUS;
+	    FAILNUMBER (unexpected_character);
 	}
 	plus = 1;
+	newexp = 0;
 	goto number_start;
 	
     case '-':
 
 	if (exp) {
 	    if (expminus) {
-		failburger (parser, "Double minus in exponent");
+		FAILNUMBER (unexpected_character);
 	    }
 	    expminus = 1;
+	    newexp = 0;
 	    goto number_start;
 	}
 	else {
 	    if (minus) {
-		failburger (parser, "Double minus");
+		FAILNUMBER (unexpected_character);
 	    }
 	    minus = 1;
 	    goto number_start;
@@ -148,19 +159,25 @@ PREFIX(number) (parser_t * parser)
     case 'E':
 
 	if (exp) {
-	    failburger (parser, "Doubled exponential");
+	    FAILNUMBER (unexpected_character);
 	}
 	exp = 1;
+	newexp = 1;
 	goto number_start;
 
     case '0':
 
-	if (! dot && ! exp) {
-	    if (! guess) {
-		zero = 1;
-	    }
-	    else {
-		guess = 10 * guess;
+	if (exp) {
+	    newexp = 0;
+	}
+	else {
+	    if (! dot) {
+		if (guess) {
+		    guess = 10 * guess;
+		}
+		else {
+		    zero = 1;
+		}
 	    }
 	}
 	goto number_start;
@@ -171,13 +188,25 @@ PREFIX(number) (parser_t * parser)
 	    if (zero) {
 		/* "Leading zeros are not allowed." (from section 2.4
 		   of JSON standard.) */
-		failburger (parser, "leading 0 in number");
+		FAILNUMBER (leading_zero);
 	    }
 	    guess = 10 * guess + (c - '0');
 	}
+	newexp = 0;
 	goto number_start;
 
+    case '\0':
+	if (STRINGEND) {
+	    FAILNUMBER (unexpected_end_of_input);
+	}
+
+	/* Fallthrough. */
+
     default:
+
+	/* We read a byte which wasn't part of a number, so push it
+	   back on the byte stack for the next thing to work out what
+	   to do with it. */
 
 	parser->end--;
 	break;
@@ -189,7 +218,6 @@ PREFIX(number) (parser_t * parser)
 	   "strtod". */
 
 	double d;
-
 	d = strtod (start, & end);
 	if (end == parser->end) {
 	    RETURNAGAIN (newSVnv (d));
@@ -218,7 +246,10 @@ PREFIX(number) (parser_t * parser)
     }
 
     /* We could not convert this number using a number conversion
-       routine, so we are going to convert it to a string. */
+       routine, so we are going to convert it to a string.  This might
+       happen with ridiculously long numbers or something. The JSON
+       standard doesn't explicitly disallow integers with a million
+       digits. */
 
     RETURNAGAIN (newSVpv (start, parser->end - start));
 }
@@ -256,17 +287,11 @@ PREFIX(string) (parser_t * parser)
 	    len++;
 	}
     }
-    if (STRINGEND) {
-	failburger (parser,
-		    "End of input reading string starting at byte %d/%d",
-		    start - parser->input, parser->length);
-    }
-    else {
-	/* Parsing of the string ended due to a \0 byte flipping the
-	   "while" switch and we dropped into this section before
-	   reaching the string's end. */
-	ILLEGALBYTE;
-    }
+    /* Parsing of the string ended due to a \0 byte flipping the
+       "while" switch and we dropped into this section before
+       reaching the string's end. */
+    ILLEGALBYTE;
+
  string_end:
 
 #ifdef PERLING
@@ -295,12 +320,13 @@ PREFIX(string) (parser_t * parser)
     RETURNAGAIN (string);
 }
 
-/* JSON literals, a complete nuisance for people writing JSON
-   parsers. */
+/* JSON literals. */
 
 static SVPTR
 PREFIX(literal) (parser_t * parser, char c)
 {
+    char * start;
+    start = parser->end - 1;
     switch (c) {
     case 't':
 	if (* parser->end++ == 'r'
@@ -344,15 +370,23 @@ PREFIX(literal) (parser_t * parser, char c)
 	break;
 
     default:
-	/* This indicates a code failure rather than the input being
-	   wrong, we should not arrive here unless the code is sending
-	   wrong-looking stuff to this routine. */
 
-	failburger (parser, "Whacko attempt to make a literal starting with '%c'",
-		    c); 
+	/* Because we have already checked that the input starts with
+	   either "t", "n" or "f", arriving here indicates a code
+	   failure rather than the input being wrong. */
+
+	failbug (__FILE__, __LINE__, parser,
+		 "Attempt to make a literal starting with '%02X'", c); 
     }
-    failburger (parser, "Unparseable character '%c' in literal",
-		* (parser->end - 1)); 
+
+    /* The bad character causing the failure is at "parser->end - 1"
+       because we didn't update "c" in the above switches. */
+
+    parser->bad_byte = parser->end - 1;
+    parser->bad_type = json_literal;
+    parser->error = json_error_bad_literal;
+    parser->bad_beginning = start;
+    failbadinput (parser); 
 
     /* Unreached, shut up compiler warnings. */
 
@@ -394,11 +428,22 @@ static SVPTR PREFIX(object) (parser_t * parser);
 
 /* Check for illegal comma at the end of a hash/array. */
 
-#define CHECKCOMMA						\
-    if (comma) {						\
-	failburger (parser, "Illegal trailing comma");		\
-    }								\
+#define CHECKCOMMA(type)						\
+    if (comma) {							\
+	/* This is tripped when looking at ] or }. */			\
+	parser->bad_beginning = start;					\
+	parser->error = json_error_trailing_comma;			\
+	parser->bad_type = type;					\
+	parser->bad_byte = parser->end - 2;				\
+	failbadinput (parser);						\
+    }
 
+#define FAILARRAY(err)				\
+    parser->bad_byte = parser->end - 1;		\
+    parser->bad_type = json_array;		\
+    parser->bad_beginning = start;		\
+    parser->error = json_error_ ## err;		\
+    failbadinput (parser)
 
 /* We have seen "[", so now deal with the contents of an array. At the
    end of this routine, "parser->end" is pointing one beyond the final
@@ -415,11 +460,13 @@ PREFIX(array) (parser_t * parser)
     /* Have we seen at least one value in the array, so that commas
        are legal? */
     int comma;
+    char * start;
 
     comma = 0;
 #ifdef PERLING
     av = newAV ();
 #endif
+    start = parser->end - 1;
 
     /* We are either at the start of the array, just after "[", or we
        have seen at least one value, so just after ",". */
@@ -431,23 +478,18 @@ PREFIX(array) (parser_t * parser)
 	PARSE(array_start);
 
     case ']':
-	CHECKCOMMA;
+	CHECKCOMMA(json_array);
 	/* In legal JSON, this should only be reached for an empty
 	   array. */
 	goto array_end;
 
     case ',':
-	failburger (parser, "Stray comma");
-
-    case '\0':
-	if (STRINGEND) {
-	    failburger (parser, "Unexpected end of input parsing array");
-	}
-
-	/* Fallthrough */
+	parser->expected = VALUE_START | XWHITESPACE | ARRAY_END;
+	FAILARRAY(stray_comma);
 
     default:
-	failburger (parser, "unknown character '%c' in array", c);
+	parser->expected = ARRAY_END | VALUE_START;
+	FAILARRAY(unexpected_character);
     }
 
     comma = 1;
@@ -471,21 +513,23 @@ PREFIX(array) (parser_t * parser)
 	/* Array with at least one element. */
 	goto array_end;
 
-    case '\0':
-	if (STRINGEND) {
-	    failburger (parser, "Unexpected end of input parsing array");
-	}
-
-	/* Fallthrough */
-
     default:
-	failburger (parser, "Unknown character '%c' after object key", c);
+
+	parser->expected = XWHITESPACE | COMMA | ARRAY_END;
+	FAILARRAY(unexpected_character);
     }
 
  array_end:
 
     RETURNAGAIN (newRV_noinc ((SV *) av));
 }
+
+#define FAILOBJECT(err)				\
+    parser->bad_byte = parser->end - 1;		\
+    parser->bad_type = json_object;		\
+    parser->bad_beginning = start;		\
+    parser->error = json_error_ ## err;		\
+    failbadinput (parser)
 
 /* We have seen "{", so now deal with the contents of an object. At
    the end of this routine, "parser->end" is pointing one beyond the
@@ -507,6 +551,10 @@ PREFIX(object) (parser_t * parser)
     /* This is set to -1 if we want a Unicode key. See "perldoc
        perlapi" under "hv_store". */
     int uniflag;
+    /* Start of parsing. */
+    char * start;
+
+    start = parser->end - 1;
 
     if (parser->unicode) {
 	/* Keys are unicode. */
@@ -536,14 +584,14 @@ PREFIX(object) (parser_t * parser)
 	/* Unreachable */
 
     case '}':
-	CHECKCOMMA;
+	CHECKCOMMA(json_object);
 	goto hash_end;
 
 	/* Unreachable */
 
     case '"':
 	if (middle) {
-	    failburger (parser, "Missing comma (,) after object value");
+	    FAILOBJECT(missing_comma);
 	}
 	else {
 	    comma = 0;
@@ -560,20 +608,18 @@ PREFIX(object) (parser_t * parser)
 	    goto hash_start;
 	}
 	else {
-	    failburger (parser, "Stray comma while parsing object");
+	    parser->expected = XWHITESPACE | STRING_START;
+	    FAILOBJECT(stray_comma);
 	}
 
 	/* Unreachable */
 
-    case '\0':
-	if (STRINGEND) {
-	    failburger (parser, "Unexpected end of input parsing object");
-	}
-
-	/* Fallthrough */
-
     default:
-	failburger (parser, "Unknown character '%c' in object key", c);
+	parser->expected = XWHITESPACE | STRING_START;
+	if (middle) {
+	    parser->expected |= COMMA;
+	}
+	FAILOBJECT(unexpected_character);
     }
 
  hash_next:
@@ -587,15 +633,9 @@ PREFIX(object) (parser_t * parser)
 	middle = 1;
 	goto hash_value;
 
-    case '\0':
-	if (STRINGEND) {
-	    failburger (parser, "Unexpected end of input parsing object");
-	}
-
-	/* Fallthrough */
-
     default:
-	failburger (parser, "Unknown character '%c' after object key", c);
+	parser->expected = XWHITESPACE | VALUE_SEPARATOR | OBJECT_END;
+	FAILOBJECT(unexpected_character);
     }
 
     /* Unreachable */
@@ -606,16 +646,11 @@ PREFIX(object) (parser_t * parser)
 
 	PARSE(hash_value);
 
-    case '\0':
-	if (STRINGEND) {
-	    failburger (parser, "Unexpected end of input parsing object value");
-	}
-
-	/* Fallthrough */
-
     default:
-	failburger (parser, "Unknown character '%c' in object value", c);
+	parser->expected = XWHITESPACE | VALUE_START;
+	FAILOBJECT(unexpected_character);
     }
+
     if (key.bad_boys) {
 	int klen;
 	klen = resolve_string (parser, & key);

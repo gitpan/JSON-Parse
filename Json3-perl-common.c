@@ -45,7 +45,7 @@
 /* Match digits. */
 
 #define DIGIT19 \
-    '1':	\
+      '1':	\
  case '2':	\
  case '3':	\
  case '4':	\
@@ -54,9 +54,6 @@
  case '7':	\
  case '8':	\
  case '9'
-
-/* This is a test for whether the string has ended, which we use when
-   we catch a zero byte in an unexpected part of the input. */
 
 /* A "string_t" is a pointer into the input, which lives in
    "parser->input". The "string_t" structure is used for copying
@@ -76,6 +73,112 @@ typedef struct string {
     unsigned bad_boys : 1;
 }
 string_t;
+
+typedef enum {
+    json_invalid,
+    json_string,
+    json_number,
+    json_literal,
+    json_object,
+    json_array,
+    json_unicode_escape,
+    json_overflow
+}
+json_type_t;
+
+const char * type_names[json_overflow] = {
+    "invalid",
+    "string",
+    "number",
+    "literal",
+    "object",
+    "array",
+    "unicode escape"
+};
+
+typedef enum {
+    json_error_invalid,
+    json_error_unexpected_character,
+    json_error_unexpected_end_of_input,
+    json_error_non_hexadecimal_character,
+    json_error_stray_comma,
+    json_error_missing_comma,
+    json_error_illegal_byte,
+    json_error_bad_literal,
+    json_error_stray_final_character,
+    json_error_trailing_comma,
+    json_error_too_many_decimal_points,
+    json_error_leading_zero,
+    json_error_second_half_of_surrogate_pair_missing,
+    json_error_surrogate_pair_unreadable,
+    json_error_unknown_escape,
+    json_error_empty_input,
+    json_error_overflow
+}
+json_error_t;
+
+const char * json_errors[json_error_overflow] = {
+    "invalid",
+    "Unexpected character '%c'",
+    "Unexpected end of input",
+    "Non-hexadecimal character '%c'",
+    "Stray comma",
+    "Missing comma",
+    "Illegal byte in string 0x%02x",
+    "Unexpected character '%c' in literal",
+    "Stray final character",
+    "Trailing comma",
+    "Too many decimal points",
+    "Leading zero",
+    "Second half of surrogate pair missing",
+    "Surrogate pair unreadable",
+    "Unknown escape '\\%c'",
+    "Empty input",
+};
+
+enum expectation {
+    xwhitespace,
+    xvalue_start,
+    xcomma,
+    xvalue_separator,
+    xobject_end,
+    xarray_end,
+    xhexadecimal_character,
+    xstring_start,
+    xunicode_escape,
+    xdigit,
+    xdot,
+    xminus,
+    n_expectations
+};
+
+#define XWHITESPACE (1<<xwhitespace)
+#define VALUE_START (1<<xvalue_start)
+#define COMMA (1<<xcomma)
+#define VALUE_SEPARATOR (1<<xvalue_separator)
+#define OBJECT_END (1<<xobject_end)
+#define ARRAY_END (1<<xarray_end)
+#define HEXADECIMAL_CHARACTER (1<<xhexadecimal_character)
+#define STRING_START (1<<xstring_start)
+#define UNICODE_ESCAPE (1<<xunicode_escape)
+#define XDIGIT (1<<xdigit)
+#define XDOT (1<<xdot)
+#define XMINUS (1<<xminus)
+
+char * input_expectation[n_expectations] = {
+    "whitespace",
+    "start of a value, 0-9, '-', '\"', 't', 'n', 'f', '[', or '{'",
+    "comma ','",
+    "value separator ':'",
+    "end of object '}'",
+    "end of array ']'",
+    "hexadecimal character, 0-9, a-f or A-F",
+    "start of string, '\"'",
+    "unicode escape \\uXXXX",
+    "digit 0-9",
+    "dot .",
+    "minus '-'",
+};
 
 typedef struct parser {
 
@@ -109,6 +212,26 @@ typedef struct parser {
 
     int line;
 
+    /* Where the beginning of the series of unfortunate events was. */
+
+    char * bad_beginning;
+
+    /* The bad type itself. */
+
+    json_type_t bad_type;
+
+    /* What we were expecting to see when the error occurred. */
+
+    int expected;
+
+    /* The byte which caused the parser to fail. */
+
+    char * bad_byte;
+
+    /* The type of error encountered. */
+
+    json_error_t error;
+
     /* Unicode? */
 
     unsigned int unicode : 1;
@@ -133,23 +256,183 @@ static SV * json_null;
 
 /* The size of the buffer for printing errors. */
 
-#define BURGERSIZE 0x1000
+#define ERRORMSGBUFFERSIZE 0x1000
 
 /* Error fallthrough. This takes the error and sends it to "croak". */
 
-static INLINE void failburger (parser_t * parser, const char * format, ...)
+#define NOBYTE -1
+#define HEXFORMAT "0x%02x"
+#define XLENGTH strlen (HEXFORMAT)
+
+/* Assert failure handler. Coming here means there is a bug in the
+   code rather than in the JSON input. We still send it to Perl via
+   "croak". */
+
+static INLINE void
+failbug (char * file, int line, parser_t * parser, const char * format, ...)
 {
-    char buffer[BURGERSIZE];
+    char buffer[ERRORMSGBUFFERSIZE];
     va_list a;
     va_start (a, format);
-    vsnprintf (buffer, BURGERSIZE, format, a);
+    vsnprintf (buffer, ERRORMSGBUFFERSIZE, format, a);
     va_end (a);
-    croak ("Line %d, byte %d/%d: %s", parser->line,
+    croak ("JSON::Parse: %s:%d: Internal error at line %d: %s",
+	   file, line, parser->line, buffer);
+}
+
+/* This is a test for whether the string has ended, which we use when
+   we catch a zero byte in an unexpected part of the input. Here we
+   use ">" rather than ">=" because "parser->end" is incremented by
+   one after each access. */
+
+#define STRINGEND (parser->end > parser->last_byte)
+
+static INLINE void
+failbadinput (parser_t * parser)
+{
+    char buffer[ERRORMSGBUFFERSIZE];
+    char formatbuffer[ERRORMSGBUFFERSIZE];
+    const char * format;
+    int string_end;
+    int i;
+    int l;
+    if (
+	(
+	 parser->error == json_error_unexpected_character
+	 ||
+	 parser->error == json_error_illegal_byte
+	 )
+	&&
+	STRINGEND) {
+	parser->error = json_error_unexpected_end_of_input;
+	parser->bad_byte = 0;
+    }
+    if (parser->error != json_error_invalid &&
+	parser->error < json_error_overflow) {
+	format = json_errors[parser->error];
+    }
+    else {
+	failbug (__FILE__, __LINE__, parser,
+		 "Bad value for parser->error: %d\n", parser->error);
+    }
+    l = strlen (format);
+    if (l > ERRORMSGBUFFERSIZE - XLENGTH) {
+	l = ERRORMSGBUFFERSIZE - XLENGTH;
+    }
+    for (i = 0; i < l; i++) {
+	formatbuffer[i] = format[i];
+    }
+    formatbuffer[l] = '\0';
+    /* If the error is unexpected character or illegal byte, and the
+       actual unexpected character is the end of the string character
+       \0, change to unexpected end of input error. */
+    if (parser->bad_byte) {
+	if (! isprint (* (parser->bad_byte))) {
+	    int percent;
+	    int j;
+	    percent = 0;
+	    for (i = 0, j = 0; i < l; i++, j++) {
+		if (percent) {
+		    if (format[i] == 'c') {
+			int k;
+			j -= 2;
+			for (k = 0; k < XLENGTH; k++, j++) {
+			    formatbuffer[j] = HEXFORMAT[k];
+			}
+			/* Skip the 'c' and trailing '. */
+			i += 2;
+		    }
+		}
+		if (format[i] == '%') {
+		    percent = 1;
+		}
+		else {
+		    percent = 0;
+		}
+		formatbuffer[j] = format[i];
+	    }
+	}
+	string_end = snprintf (buffer, ERRORMSGBUFFERSIZE, formatbuffer,
+			       * parser->bad_byte);
+    }
+    else {
+	string_end = snprintf (buffer, ERRORMSGBUFFERSIZE, formatbuffer);
+    }
+    if (parser->bad_type) {
+	if (parser->bad_type < json_overflow) {
+	    string_end += snprintf (buffer + string_end,
+				    ERRORMSGBUFFERSIZE - string_end,
+				    " parsing %s",
+				    type_names[parser->bad_type]);
+	    if (parser->bad_beginning) {
+		string_end += snprintf (buffer + string_end,
+					ERRORMSGBUFFERSIZE - string_end,
+					" starting from byte %d",
+					parser->bad_beginning
+					- parser->input + 1);
+	    }
+	    if (parser->expected) {
+		int i;
+		int joined;
+		string_end += snprintf (buffer + string_end,
+					ERRORMSGBUFFERSIZE
+					- string_end,
+					" expecting ");
+		joined = 0;
+		for (i = 0; i < n_expectations; i++) {
+		    if (parser->expected & (1<<i)) {
+			if (joined) {
+			    string_end += snprintf (buffer + string_end,
+						    ERRORMSGBUFFERSIZE
+						    - string_end,
+						    " or ");
+			}
+			string_end += snprintf (buffer + string_end,
+						ERRORMSGBUFFERSIZE - string_end,
+						"%s", input_expectation[i]);
+			joined = 1;
+		    }
+		}
+	    }
+	}
+    }
+    if (parser->length > 0) {
+	if (parser->end - parser->input > parser->length) {
+	    croak ("JSON error at line %d: %s", parser->line,
+		   buffer);
+	}
+	else if (parser->bad_byte) {
+	    croak ("JSON error at line %d, byte %d/%d: %s",
+		   parser->line,
+		   parser->bad_byte - parser->input + 1,
+		   parser->length, buffer);
+	}
+	else {
+	    croak ("JSON error at line %d: %s",
+		   parser->line, buffer);
+	}
+    }
+    else {
+	croak ("JSON error: %s", buffer);
+    }
+}
+
+/* This is for failures not due to errors in the input or to bugs but
+   to exhaustion of resources, i.e. out of memory. */
+
+static INLINE void failresources (parser_t * parser, const char * format, ...)
+{
+    char buffer[ERRORMSGBUFFERSIZE];
+    va_list a;
+    va_start (a, format);
+    vsnprintf (buffer, ERRORMSGBUFFERSIZE, format, a);
+    va_end (a);
+    croak ("Parsing failed at line %d, byte %d/%d: %s", parser->line,
 	   parser->end - parser->input,
 	   parser->length, buffer);
 }
 
-#undef BURGERSIZE
+#undef ERRORMSGBUFFERSIZE
 
 /* Get more memory for "parser->buffer". */
 
@@ -165,7 +448,7 @@ expand_buffer (parser_t * parser, int length)
 	    parser->buffer = malloc (parser->buffer_size);
 	}
 	if (! parser->buffer) {
-	    failburger (parser, "out of memory");
+	    failresources (parser, "out of memory");
 	}
     }
 }
@@ -177,6 +460,12 @@ expand_buffer (parser_t * parser, int length)
 
 #define UHEXBYTE						     \
       'A': case 'B': case 'C': case 'D': case 'E': case 'F' 
+
+#define UNIFAIL(err)						\
+    parser->bad_type = json_unicode_escape;			\
+    parser->expected = HEXADECIMAL_CHARACTER;			\
+    parser->error = json_error_ ## err;				\
+    failbadinput (parser)
 
 /* Parse the hex bit of a \uXYZA escape. */
 
@@ -210,15 +499,14 @@ parse_hex_bytes (parser_t * parser, char * p)
 
 	case '\0':
 	    if (p + k - parser->input >= parser->length) {
-		failburger (parser, "Unexpected end of input parsing unicode escape");
+		UNIFAIL (unexpected_end_of_input);
 	    }
 
 	    /* Fallthrough */
 
 	default:
-	    failburger (parser,
-			"Non-hexadecimal character '%c' parsing \\u escape",
-			c);
+	    parser->bad_byte = p + k;
+	    UNIFAIL (non_hexadecimal_character);
 	}
     }
     return unicode;
@@ -226,6 +514,11 @@ parse_hex_bytes (parser_t * parser, char * p)
 
 #undef LHEXBYTE
 #undef UHEXBYTE
+
+#define STRINGFAIL(err)				\
+    parser->error = json_error_ ## err;		\
+    parser->bad_type = json_string;		\
+    failbadinput (parser)
 
 static INLINE char *
 do_unicode_escape (parser_t * parser, char * p, unsigned char ** b_ptr)
@@ -236,29 +529,33 @@ do_unicode_escape (parser_t * parser, char * p, unsigned char ** b_ptr)
     p += 4;
     plus = ucs2_to_utf8 (unicode, *b_ptr);
     if (plus == UNICODE_BAD_INPUT) {
-	failburger (parser,
-		    "bad unicode escape");
+	failbadinput (parser);
     }
     else if (plus == UNICODE_SURROGATE_PAIR) {
 	int unicode2;
 	int plus2;
-	unsigned char c;
 	if (*p++ == '\\' && *p++ == 'u') {
 	    unicode2 = parse_hex_bytes (parser, p);
 	    p += 4;
 	    plus2 = surrogate_to_utf8 (unicode, unicode2, * b_ptr);
 	    if (plus2 <= 0) {
-		failburger (parser, "surrogate pair unreadable");
+		parser->bad_byte = 0;
+		parser->bad_beginning = p - 4;
+		UNIFAIL (surrogate_pair_unreadable);
 	    }
 	    * b_ptr += plus2;
 	    goto end;
 	}
 	else {
-	    failburger (parser, "second half of surrogate pair not found");
+	    parser->bad_byte = p - 1;
+	    parser->expected = UNICODE_ESCAPE;
+	    STRINGFAIL (second_half_of_surrogate_pair_missing);
 	}
     }
     else if (plus <= 0) {
-	failburger (parser, "error decoding unicode escape");
+	failbug (__FILE__, __LINE__, parser, 
+		 "unhandled error code %d while decoding unicode escape",
+		 plus);
     }
     * b_ptr += plus;
  end:
@@ -268,7 +565,8 @@ do_unicode_escape (parser_t * parser, char * p, unsigned char ** b_ptr)
     return p;
 }
 
-/* Handle backslash escapes. */
+/* Handle backslash escapes. We can't use the NEXTBYTE macro here for
+   the reasons outlined below. */
 
 #define HANDLE_ESCAPES(p)				\
     switch (c = * ((p)++)) {				\
@@ -302,10 +600,15 @@ do_unicode_escape (parser_t * parser, char * p, unsigned char ** b_ptr)
     case 'u':						\
 	p = do_unicode_escape (parser, p, & b);		\
 	break;						\
-							\
+    case BADBYTES:					\
+	parser->bad_beginning = p - 2;			\
+	parser->bad_byte = p - 1;			\
+	STRINGFAIL (unexpected_character);		\
+	break;						\
     default:						\
-	failburger (parser,				\
-		    "Unknown escape '\\%c'", c);	\
+	parser->bad_beginning = p - 2;			\
+	parser->bad_byte = p - 1;			\
+	STRINGFAIL (unknown_escape);			\
     }
 
 /* Resolve "s" by converting escapes into the appropriate things. Put
@@ -378,7 +681,8 @@ get_key_string (parser_t * parser, string_t * key)
 	    break;
 	}
 	if (parser->end >= parser->last_byte) {
-	    failburger (parser, "Unexpected end of input parsing object key string");
+	    parser->bad_beginning = key->start - 1;
+	    STRINGFAIL (unexpected_end_of_input);
 	}
 
 	/* Skip over \x, where x is anything at all. This includes \"
@@ -392,8 +696,10 @@ get_key_string (parser_t * parser, string_t * key)
     key->length = parser->end - key->start - 1;
 }
 
-#define ILLEGALBYTE  \
-    failburger (parser, "Illegal byte value '0x%02X' in string", c)
+#define ILLEGALBYTE							\
+    parser->bad_beginning = start;					\
+    parser->bad_byte = parser->end - 1;					\
+    STRINGFAIL (illegal_byte)
 
 
 /* Resolve the string pointed to by "parser->end" into
@@ -405,6 +711,9 @@ get_string (parser_t * parser)
 {
     unsigned char * b;
     unsigned char c;
+    char * start;
+
+    start = parser->end;
 
     if (! parser->buffer) {
 	expand_buffer (parser, 0x1000);
@@ -437,8 +746,8 @@ get_string (parser_t * parser)
 	    expand_buffer (parser, 2 * parser->buffer_size);
 	    b = parser->buffer + size;
 	}
-	if (parser->end >= parser->last_byte) {
-	    failburger (parser, "Object key string went past end");
+	if (STRINGEND) {
+	    STRINGFAIL (unexpected_end_of_input);
 	}
     }
  string_end:
@@ -453,5 +762,4 @@ parser_free (parser_t * parser)
     }
 }
 
-#define STRINGEND (parser->end - parser->input >= parser->length)
 

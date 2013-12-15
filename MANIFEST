@@ -1,4 +1,9 @@
+allerrors.pl
 Changes
+chr.pl
+end-of-input.pl
+errors.txt
+extract-errors.pl
 Json3-entry-points.c
 Json3-perl-common.c
 Json3-perl.c
@@ -20,6 +25,7 @@ t/test.json
 t/unicode.t
 t/valid-json.t
 t/whitespace.t
+testformat.pl
 unicode.c
 unicode.h
 META.yml                                 Module YAML meta-data (added by MakeMaker)

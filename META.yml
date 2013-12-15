@@ -4,8 +4,6 @@ author:
   - 'Ben Bullock <bkb@cpan.org>'
 build_requires:
   ExtUtils::MakeMaker: 0
-configure_requires:
-  ExtUtils::MakeMaker: 0
 dynamic_config: 1
 generated_by: 'ExtUtils::MakeMaker version 6.8, CPAN::Meta::Converter version 2.120921'
 license: perl
@@ -21,5 +19,6 @@ requires:
   perl: 5.008009
 resources:
   bugtracker: https://github.com/benkasminbullock/JSON-Parse/issues
-  repository: https://github.com/benkasminbullock/JSON-Parse
-version: 0.28
+  homepage: https://groups.google.com/forum/#!forum/json-parse
+  repository: git://github.com/benkasminbullock/JSON-Parse.git
+version: 0.28_01

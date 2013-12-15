@@ -192,6 +192,16 @@ is marked as a character string:
     # Prints 1, because it's upgraded regardless of the input string's
     # flags.
 
+This is modelled on the behaviour of Perl's C<chr>:
+
+    no utf8;
+    my $kani = '87f9';
+    print utf8::is_utf8 ($kani), "\n";
+    # prints a blank line
+    $kani = chr (hex ($kani));
+    print utf8::is_utf8 ($kani), "\n";
+    # prints 1
+
 Surrogate pairs in the form C<\uD834\uDD1E> are also handled.
 
 =head2 JSON arrays
@@ -434,6 +444,14 @@ The module exports nothing by default. All of the functions,
 L</parse_json>, L</json_file_to_perl>, L</valid_json> and
 L</assert_valid_json>, as well as the old function names
 L</validate_json> and L</json_to_perl>, can be exported on request.
+
+=head1 SUPPORT
+
+There is a mailing list at <json-parse@googlegroups.com> for
+announcements and discussions about the module. You can read it on the
+web at
+L<https://groups.google.com/forum/#!forum/json-parse>. Membership is
+open to the public.
 
 =head1 AUTHOR
 
