@@ -45,11 +45,6 @@ int utf8_to_ucs2 (const unsigned char * input, const unsigned char ** end_ptr)
     return -1;
 }
 
-    /*
-    fprintf (stderr, "Badly-formed UTF-8 byte %X\n", input[0]);
-    */
-/* BKB 2010-04-06 11:33:55 */
-
 /* Input: a Unicode code point, "ucs2". 
 
    Output: UTF-8 characters in buffer "utf8". 

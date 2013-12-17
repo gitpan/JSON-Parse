@@ -1,5 +1,5 @@
 {
-   "abstract" : "Convert JSON into a Perl variable",
+   "abstract" : "Read JSON into a Perl variable",
    "author" : [
       "Ben Bullock <bkb@cpan.org>"
    ],
@@ -43,5 +43,5 @@
          "web" : "https://github.com/benkasminbullock/JSON-Parse"
       }
    },
-   "version" : "0.28_01"
+   "version" : "0.28_02"
 }

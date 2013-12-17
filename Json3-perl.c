@@ -110,7 +110,8 @@ PREFIX(number) (parser_t * parser)
     case '.':
 
 	if (dot) {
-	    FAILNUMBER (too_many_decimal_points);
+	    parser->expected = XDIGIT;
+	    FAILNUMBER (unexpected_character);
 	}
 	if (exp || (! zero && ! guess)) {
 	    parser->expected = XDIGIT | XMINUS;
@@ -130,7 +131,7 @@ PREFIX(number) (parser_t * parser)
 	   of RFC 4627, the JSON standard.) */
 
 	if (! newexp) {
-	    parser->expected = XDIGIT | XDOT | XMINUS;
+	    parser->expected = XDIGIT;
 	    FAILNUMBER (unexpected_character);
 	}
 	plus = 1;
@@ -141,6 +142,7 @@ PREFIX(number) (parser_t * parser)
 
 	if (exp) {
 	    if (expminus) {
+		parser->expected = XDIGIT;
 		FAILNUMBER (unexpected_character);
 	    }
 	    expminus = 1;
@@ -149,6 +151,7 @@ PREFIX(number) (parser_t * parser)
 	}
 	else {
 	    if (minus) {
+		parser->expected = XDIGIT;
 		FAILNUMBER (unexpected_character);
 	    }
 	    minus = 1;
@@ -159,6 +162,10 @@ PREFIX(number) (parser_t * parser)
     case 'E':
 
 	if (exp) {
+	    parser->expected = XDIGIT;
+	    if (newexp) {
+		parser->expected |= XPLUS | XMINUS;
+	    }
 	    FAILNUMBER (unexpected_character);
 	}
 	exp = 1;
@@ -235,14 +242,6 @@ PREFIX(number) (parser_t * parser)
 	    }
 	    RETURNAGAIN (newSViv (guess));
 	}
-	else {
-	    int i;
-	    
-	    i = strtol (start, & end, 10);
-	    if (end == parser->end) {
-		RETURNAGAIN (newSViv (i));
-	    }
-	}
     }
 
     /* We could not convert this number using a number conversion
@@ -275,7 +274,7 @@ PREFIX(string) (parser_t * parser)
        "input". This is a trick to increase the speed of
        processing. */
 
-    while ((NEXTBYTE)) {
+    while (NEXTBYTE) {
 	switch (c) {
 	case '"':
 	    goto string_end;
@@ -384,8 +383,9 @@ PREFIX(literal) (parser_t * parser, char c)
 
     parser->bad_byte = parser->end - 1;
     parser->bad_type = json_literal;
-    parser->error = json_error_bad_literal;
+    parser->error = json_error_unexpected_character;
     parser->bad_beginning = start;
+    parser->expected = XLITERAL;
     failbadinput (parser); 
 
     /* Unreached, shut up compiler warnings. */
@@ -432,9 +432,10 @@ static SVPTR PREFIX(object) (parser_t * parser);
     if (comma) {							\
 	/* This is tripped when looking at ] or }. */			\
 	parser->bad_beginning = start;					\
-	parser->error = json_error_trailing_comma;			\
+	parser->error = json_error_unexpected_character;		\
 	parser->bad_type = type;					\
-	parser->bad_byte = parser->end - 2;				\
+	parser->bad_byte = parser->end - 1;				\
+	parser->expected = VALUE_START;					\
 	failbadinput (parser);						\
     }
 
@@ -484,11 +485,11 @@ PREFIX(array) (parser_t * parser)
 	goto array_end;
 
     case ',':
-	parser->expected = VALUE_START | XWHITESPACE | ARRAY_END;
-	FAILARRAY(stray_comma);
+	parser->expected = VALUE_START | XWHITESPACE | XARRAY_END;
+	FAILARRAY(unexpected_character);
 
     default:
-	parser->expected = ARRAY_END | VALUE_START;
+	parser->expected = XARRAY_END | VALUE_START;
 	FAILARRAY(unexpected_character);
     }
 
@@ -515,7 +516,7 @@ PREFIX(array) (parser_t * parser)
 
     default:
 
-	parser->expected = XWHITESPACE | COMMA | ARRAY_END;
+	parser->expected = XWHITESPACE | XCOMMA | XARRAY_END;
 	FAILARRAY(unexpected_character);
     }
 
@@ -591,7 +592,7 @@ PREFIX(object) (parser_t * parser)
 
     case '"':
 	if (middle) {
-	    FAILOBJECT(missing_comma);
+	    FAILOBJECT(unexpected_character);
 	}
 	else {
 	    comma = 0;
@@ -608,16 +609,16 @@ PREFIX(object) (parser_t * parser)
 	    goto hash_start;
 	}
 	else {
-	    parser->expected = XWHITESPACE | STRING_START;
-	    FAILOBJECT(stray_comma);
+	    parser->expected = XWHITESPACE | XSTRING_START;
+	    FAILOBJECT(unexpected_character);
 	}
 
 	/* Unreachable */
 
     default:
-	parser->expected = XWHITESPACE | STRING_START;
+	parser->expected = XWHITESPACE | XSTRING_START;
 	if (middle) {
-	    parser->expected |= COMMA;
+	    parser->expected |= XCOMMA;
 	}
 	FAILOBJECT(unexpected_character);
     }
@@ -634,7 +635,7 @@ PREFIX(object) (parser_t * parser)
 	goto hash_value;
 
     default:
-	parser->expected = XWHITESPACE | VALUE_SEPARATOR | OBJECT_END;
+	parser->expected = XWHITESPACE | XVALUE_SEPARATOR;
 	FAILOBJECT(unexpected_character);
     }
 

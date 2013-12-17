@@ -76,6 +76,7 @@ string_t;
 
 typedef enum {
     json_invalid,
+    json_initial,
     json_string,
     json_number,
     json_literal,
@@ -88,6 +89,7 @@ json_type_t;
 
 const char * type_names[json_overflow] = {
     "invalid",
+    "initial state",
     "string",
     "number",
     "literal",
@@ -96,89 +98,9 @@ const char * type_names[json_overflow] = {
     "unicode escape"
 };
 
-typedef enum {
-    json_error_invalid,
-    json_error_unexpected_character,
-    json_error_unexpected_end_of_input,
-    json_error_non_hexadecimal_character,
-    json_error_stray_comma,
-    json_error_missing_comma,
-    json_error_illegal_byte,
-    json_error_bad_literal,
-    json_error_stray_final_character,
-    json_error_trailing_comma,
-    json_error_too_many_decimal_points,
-    json_error_leading_zero,
-    json_error_second_half_of_surrogate_pair_missing,
-    json_error_surrogate_pair_unreadable,
-    json_error_unknown_escape,
-    json_error_empty_input,
-    json_error_overflow
-}
-json_error_t;
+#include "errors.c"
 
-const char * json_errors[json_error_overflow] = {
-    "invalid",
-    "Unexpected character '%c'",
-    "Unexpected end of input",
-    "Non-hexadecimal character '%c'",
-    "Stray comma",
-    "Missing comma",
-    "Illegal byte in string 0x%02x",
-    "Unexpected character '%c' in literal",
-    "Stray final character",
-    "Trailing comma",
-    "Too many decimal points",
-    "Leading zero",
-    "Second half of surrogate pair missing",
-    "Surrogate pair unreadable",
-    "Unknown escape '\\%c'",
-    "Empty input",
-};
-
-enum expectation {
-    xwhitespace,
-    xvalue_start,
-    xcomma,
-    xvalue_separator,
-    xobject_end,
-    xarray_end,
-    xhexadecimal_character,
-    xstring_start,
-    xunicode_escape,
-    xdigit,
-    xdot,
-    xminus,
-    n_expectations
-};
-
-#define XWHITESPACE (1<<xwhitespace)
-#define VALUE_START (1<<xvalue_start)
-#define COMMA (1<<xcomma)
-#define VALUE_SEPARATOR (1<<xvalue_separator)
-#define OBJECT_END (1<<xobject_end)
-#define ARRAY_END (1<<xarray_end)
-#define HEXADECIMAL_CHARACTER (1<<xhexadecimal_character)
-#define STRING_START (1<<xstring_start)
-#define UNICODE_ESCAPE (1<<xunicode_escape)
-#define XDIGIT (1<<xdigit)
-#define XDOT (1<<xdot)
-#define XMINUS (1<<xminus)
-
-char * input_expectation[n_expectations] = {
-    "whitespace",
-    "start of a value, 0-9, '-', '\"', 't', 'n', 'f', '[', or '{'",
-    "comma ','",
-    "value separator ':'",
-    "end of object '}'",
-    "end of array ']'",
-    "hexadecimal character, 0-9, a-f or A-F",
-    "start of string, '\"'",
-    "unicode escape \\uXXXX",
-    "digit 0-9",
-    "dot .",
-    "minus '-'",
-};
+#define VALUE_START (XARRAYOBJECTSTART | XSTRING_START | XDIGIT | XMINUS | XLITERAL)
 
 typedef struct parser {
 
@@ -248,12 +170,6 @@ parser_t;
 #define INLINE
 #endif /* def __GNUC__ */
 
-/* All instances of JSON literals are pointed to the following. */
-
-static SV * json_true;
-static SV * json_false;
-static SV * json_null;
-
 /* The size of the buffer for printing errors. */
 
 #define ERRORMSGBUFFERSIZE 0x1000
@@ -296,13 +212,7 @@ failbadinput (parser_t * parser)
     int string_end;
     int i;
     int l;
-    if (
-	(
-	 parser->error == json_error_unexpected_character
-	 ||
-	 parser->error == json_error_illegal_byte
-	 )
-	&&
+    if (parser->error == json_error_unexpected_character &&
 	STRINGEND) {
 	parser->error = json_error_unexpected_end_of_input;
 	parser->bad_byte = 0;
@@ -377,7 +287,7 @@ failbadinput (parser_t * parser)
 		string_end += snprintf (buffer + string_end,
 					ERRORMSGBUFFERSIZE
 					- string_end,
-					" expecting ");
+					": expecting ");
 		joined = 0;
 		for (i = 0; i < n_expectations; i++) {
 		    if (parser->expected & (1<<i)) {
@@ -442,10 +352,10 @@ expand_buffer (parser_t * parser, int length)
     if (parser->buffer_size < 2 * length + 0x100) {
 	parser->buffer_size = 2 * length + 0x100;
 	if (parser->buffer) {
-	    parser->buffer = realloc (parser->buffer, parser->buffer_size);
+	    Renew (parser->buffer, parser->buffer_size, unsigned char);
 	}
 	else {
-	    parser->buffer = malloc (parser->buffer_size);
+	    Newx (parser->buffer, parser->buffer_size, unsigned char);
 	}
 	if (! parser->buffer) {
 	    failresources (parser, "out of memory");
@@ -463,7 +373,6 @@ expand_buffer (parser_t * parser, int length)
 
 #define UNIFAIL(err)						\
     parser->bad_type = json_unicode_escape;			\
-    parser->expected = HEXADECIMAL_CHARACTER;			\
     parser->error = json_error_ ## err;				\
     failbadinput (parser)
 
@@ -506,7 +415,8 @@ parse_hex_bytes (parser_t * parser, char * p)
 
 	default:
 	    parser->bad_byte = p + k;
-	    UNIFAIL (non_hexadecimal_character);
+	    parser->expected = XHEXADECIMAL_CHARACTER;
+	    UNIFAIL (unexpected_character);
 	}
     }
     return unicode;
@@ -539,16 +449,23 @@ do_unicode_escape (parser_t * parser, char * p, unsigned char ** b_ptr)
 	    p += 4;
 	    plus2 = surrogate_to_utf8 (unicode, unicode2, * b_ptr);
 	    if (plus2 <= 0) {
-		parser->bad_byte = 0;
-		parser->bad_beginning = p - 4;
-		UNIFAIL (surrogate_pair_unreadable);
+		if (plus2 == UNICODE_NOT_SURROGATE_PAIR) {
+		    parser->bad_byte = 0;
+		    parser->bad_beginning = p - 4;
+		    UNIFAIL (not_surrogate_pair);
+		}
+		else {
+		    failbug (__FILE__, __LINE__, parser,
+			     "unhandled error %d from surrogate_to_utf8",
+			     plus2);
+		}
 	    }
 	    * b_ptr += plus2;
 	    goto end;
 	}
 	else {
 	    parser->bad_byte = p - 1;
-	    parser->expected = UNICODE_ESCAPE;
+	    parser->expected = XUNICODE_ESCAPE;
 	    STRINGFAIL (second_half_of_surrogate_pair_missing);
 	}
     }
@@ -600,15 +517,12 @@ do_unicode_escape (parser_t * parser, char * p, unsigned char ** b_ptr)
     case 'u':						\
 	p = do_unicode_escape (parser, p, & b);		\
 	break;						\
-    case BADBYTES:					\
-	parser->bad_beginning = p - 2;			\
-	parser->bad_byte = p - 1;			\
-	STRINGFAIL (unexpected_character);		\
-	break;						\
+							\
     default:						\
 	parser->bad_beginning = p - 2;			\
 	parser->bad_byte = p - 1;			\
-	STRINGFAIL (unknown_escape);			\
+        parser->expected = XESCAPE;			\
+	STRINGFAIL (unexpected_character);		\
     }
 
 /* Resolve "s" by converting escapes into the appropriate things. Put
@@ -662,7 +576,7 @@ resolve_string (parser_t * parser, string_t * s)
     return b - parser->buffer;
 }
 
-#define NEXTBYTE c = *parser->end++
+#define NEXTBYTE (c = *parser->end++)
 
 /* Get an object key value and put it into "key". Check for
    escapes. */
@@ -673,7 +587,7 @@ get_key_string (parser_t * parser, string_t * key)
     char c;
     key->start = parser->end;
     key->bad_boys = 0;
-    while ((NEXTBYTE)) {
+    while (NEXTBYTE) {
 
 	/* Go on eating bytes until we find a ". */
 
@@ -699,7 +613,8 @@ get_key_string (parser_t * parser, string_t * key)
 #define ILLEGALBYTE							\
     parser->bad_beginning = start;					\
     parser->bad_byte = parser->end - 1;					\
-    STRINGFAIL (illegal_byte)
+    parser->expected = XSTRINGCHAR;					\
+    STRINGFAIL (unexpected_character)
 
 
 /* Resolve the string pointed to by "parser->end" into
@@ -719,7 +634,7 @@ get_string (parser_t * parser)
 	expand_buffer (parser, 0x1000);
     }
     b = parser->buffer;
-    while ((NEXTBYTE)) {
+    while (NEXTBYTE) {
 	switch (c) {
 
 	case '"':
@@ -758,7 +673,7 @@ static void
 parser_free (parser_t * parser)
 {
     if (parser->buffer) {
-	free (parser->buffer);
+	Safefree (parser->buffer);
     }
 }
 
