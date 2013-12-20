@@ -1,4 +1,3 @@
-a.out
 c.c
 Changes
 errors.c
@@ -9,8 +8,11 @@ Json3.xs
 lib/JSON/Parse.pm
 lib/JSON/Parse.pod
 Makefile.PL
+MAKEREADME
 MANIFEST			This list of files
 MANIFEST.SKIP
+README
+script/validjson
 t/JSON-Parse.t
 t/Json3.t
 t/numbers.t

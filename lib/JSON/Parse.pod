@@ -185,6 +185,15 @@ input string is Unicode, escapes like \u87f9 are converted into the
 equivalent UTF-8 bytes and the particular string in which they occur
 is marked as a character string:
 
+    
+    no utf8;
+    # 蟹
+    my $kani = '["\u87f9"]';
+    my $p = parse_json ($kani);
+    print utf8::is_utf8 ($p->[0]), "\n";
+    # Prints 1, because it's upgraded regardless of the input string's
+    # flags.
+
 
 This is modelled on the behaviour of Perl's C<chr>:
 
