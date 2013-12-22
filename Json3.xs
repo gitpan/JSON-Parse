@@ -2,12 +2,12 @@
 #include "perl.h"
 #include "XSUB.h"
 
+/* TESTRANDOM should never be defined in the code released to CPAN. */
+
 //#define TESTRANDOM
 
 #ifdef TESTRANDOM
-
 #include <setjmp.h>
-
 #endif /* def TESTRANDOM */
 
 /* All instances of JSON literals are pointed to the following. These
@@ -19,12 +19,15 @@ static SV * json_null;
 
 #include "unicode.h"
 #include "unicode.c"
-#include "Json3-perl-common.c"
+#include "Json3-common.c"
 #define PERLING
 #include "Json3-perl.c"
 #undef PERLING
 #include "Json3-perl.c"
 #include "Json3-entry-points.c"
+#ifdef TESTRANDOM
+#include "Json3-random-test.c"
+#endif /* def TESTRANDOM */
 
 MODULE=JSON::Parse PACKAGE=JSON::Parse
 
@@ -56,8 +59,10 @@ CODE:
 
 #ifdef TESTRANDOM
 
-void random_json ()
+int random_json ()
 CODE:
-	random_json ();
+	RETVAL = random_json ();
+OUTPUT:
+	RETVAL
 
 #endif /* def TESTRANDOM */

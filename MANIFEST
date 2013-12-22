@@ -1,14 +1,12 @@
-c.c
 Changes
 errors.c
+Json3-common.c
 Json3-entry-points.c
-Json3-perl-common.c
 Json3-perl.c
 Json3.xs
 lib/JSON/Parse.pm
 lib/JSON/Parse.pod
 Makefile.PL
-MAKEREADME
 MANIFEST			This list of files
 MANIFEST.SKIP
 README
@@ -22,9 +20,13 @@ t/syntax.t
 t/test-empty-string.t
 t/test.json
 t/unicode.t
+t/utf8.t
 t/valid-json.t
 t/whitespace.t
 unicode.c
 unicode.h
+utf8-byte-one.c
+utf8-bytes.c
+utf8-next-byte.c
 META.yml                                 Module YAML meta-data (added by MakeMaker)
 META.json                                Module JSON meta-data (added by MakeMaker)
