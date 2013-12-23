@@ -467,6 +467,24 @@ web at
 L<https://groups.google.com/forum/#!forum/json-parse>. Membership is
 open to the public.
 
+=head1 TESTING
+
+The module incorporates extensive testing related to the production of
+error messages and validation of input. Some of the testing code is
+supplied with the module in the F</t/> subdirectory of the
+distribution.
+
+More extensive testing code is in the github repository which is not
+supplied with the module itself. A script, F<randomjson.pl>, generates
+a set number of bytes of random JSON and checks that the module's
+bytewise validation of input is correct. For example, one gigabyte of
+random bytes can be validated. This relies on a C file
+F<Json3-random-test.c> and it also requires F<Json3.xs> to be edited
+to make the macro C<TESTRANDOM> true (uncomment line 7 of the
+file). The testing code deliberately creates erroneous input and then
+uses C setjmp/longjmp to replace Perl croak, so it's not guaranteed to
+work on all operating systems.
+
 =head1 AUTHOR
 
 Ben Bullock, <bkb@cpan.org>

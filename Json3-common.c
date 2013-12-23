@@ -259,10 +259,10 @@ static INLINE void
 failbadinput (parser_t * parser)
 {
     char buffer[ERRORMSGBUFFERSIZE];
-    const char * format;
     int string_end;
     int i;
     int l;
+    const char * format;
 
     /* If the error is "unexpected character", and we are at the end
        of the input, change to "unexpected end of input". This is
@@ -282,18 +282,14 @@ failbadinput (parser_t * parser)
 	parser->expected = 0;
     }
     /* Array bounds check for error message. */
-    if (parser->error != json_error_invalid &&
-	parser->error < json_error_overflow) {
-	format = json_errors[parser->error];
-    }
-    else {
+    if (parser->error <= json_error_invalid &&
+	parser->error >= json_error_overflow) {
 	failbug (__FILE__, __LINE__, parser,
 		 "Bad value for parser->error: %d\n", parser->error);
     }
+    format = json_errors[parser->error];
     l = strlen (format);
-    if (l > ERRORMSGBUFFERSIZE - 1) {
-	/* Probably should report a bug here rather than coping with
-	   it. */
+    if (l >= ERRORMSGBUFFERSIZE - 1) {
 	l = ERRORMSGBUFFERSIZE - 1;
     }
     for (i = 0; i < l; i++) {
@@ -334,7 +330,11 @@ failbadinput (parser_t * parser)
 	   character in a different way depending on whether it's
 	   printable or not. */
 
-	if (isprint (bb)) {
+	/* Don't use "isprint" because on Windows it seems to think
+	   that 0x80 is printable:
+	   http://www.cpantesters.org/cpan/report/d6438b68-6bf4-1014-8647-737bdb05e747. */
+
+	if (bb >= 0x20 && bb < 0x7F) {
 	    /* Printable character, print the character itself. */
 	    string_end += snprintf (SNARGS, " '%c'", bb);
 	}
@@ -417,8 +417,10 @@ failbadinput (parser_t * parser)
 		    if (i != xin_literal) {
 			if (allowed[i][bb]) {
 			    failbug (__FILE__, __LINE__, parser,
-				     "mismatch: got %X but it's allowed by %s",
-				     bb, input_expectation[i]);
+				     "mismatch parsing %s: got %X "
+				     "but it's allowed by %s (%d)",
+				     type_names[parser->bad_type], bb,
+				     input_expectation[i], i);
 			}
 		    }
 		    if (joined) {
@@ -797,12 +799,15 @@ get_key_string (parser_t * parser, string_t * key)
 	parser->bad_byte = parser->end - 1;
 	STRINGFAIL (unexpected_character);
 
-    default:
-
-	/* Do nothing. */
 #define ADDBYTE 
 #define string_start key_string_next
 #include "utf8-byte-one.c"
+    default:
+
+	parser->bad_beginning = key->start - 1;
+	parser->expected = XSTRINGCHAR;
+	parser->bad_byte = parser->end - 1;
+	STRINGFAIL (unexpected_character);
     }
     key->length = parser->end - key->start - 1;
     return;
@@ -857,13 +862,11 @@ get_string (parser_t * parser)
 	HANDLE_ESCAPES(parser->end);
 	goto string_start;
 
-    case BADBYTES:
-	ILLEGALBYTE;
-
 #define ADDBYTE (* b++ = c)
 #include "utf8-byte-one.c"
 
     default:
+    case BADBYTES:
 	ILLEGALBYTE;
     }
 
@@ -871,13 +874,13 @@ get_string (parser_t * parser)
 	STRINGFAIL (unexpected_end_of_input);
     }
 
-    goto string_end;
+ string_end:
+    return b - parser->buffer;
 
 #include "utf8-next-byte.c"
 #undef ADDBYTE
 
- string_end:
-    return b - parser->buffer;
+    goto string_end;
 }
 
 static void

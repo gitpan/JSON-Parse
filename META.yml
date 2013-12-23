@@ -21,4 +21,4 @@ resources:
   bugtracker: https://github.com/benkasminbullock/JSON-Parse/issues
   homepage: https://groups.google.com/forum/#!forum/json-parse
   repository: git://github.com/benkasminbullock/JSON-Parse.git
-version: 0.28_04
+version: 0.28_05
