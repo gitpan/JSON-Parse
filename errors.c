@@ -2,10 +2,8 @@ typedef enum {
     json_error_invalid,
     json_error_unexpected_character,
     json_error_unexpected_end_of_input,
-    json_error_second_half_of_surrogate_pair_missing,
     json_error_not_surrogate_pair,
     json_error_empty_input,
-    json_error_bad_unicode_input,
     json_error_overflow
 }
 json_error_t;
@@ -14,10 +12,8 @@ const char * json_errors[json_error_overflow] = {
     "Invalid",
     "Unexpected character",
     "Unexpected end of input",
-    "Second half of surrogate pair missing",
     "Not surrogate pair",
     "Empty input",
-    "Bad_unicode_input",
 };
 enum expectation {
     xwhitespace,
@@ -37,6 +33,7 @@ enum expectation {
     xstringchar,
     xliteral,
     xin_literal,
+    xin_surrogate_pair,
     xnot_20_7f_c2_f4,
     xnot_80_8f,
     xnot_80_9f,
@@ -62,6 +59,7 @@ enum expectation {
 #define XSTRINGCHAR (1<<xstringchar)
 #define XLITERAL (1<<xliteral)
 #define XIN_LITERAL (1<<xin_literal)
+#define XIN_SURROGATE_PAIR (1<<xin_surrogate_pair)
 #define XNOT_20_7F_C2_F4 (1<<xnot_20_7f_c2_f4)
 #define XNOT_80_8F (1<<xnot_80_8f)
 #define XNOT_80_9F (1<<xnot_80_9f)
@@ -86,6 +84,7 @@ char * input_expectation[n_expectations] = {
 "an ASCII or UTF-8 character: '\\x20-\\x7f', '\\xC2-\\xF4'",
 "start of literal: 't', 'f', 'n'",
 "after the start of literal",
+"the second half of a surrogate pair",
 "printable ASCII or first byte of UTF-8: '\\x20-\\x7f', '\\xc2-\\xf4'",
 "bytes in range 80-8f: '\\x80-\\x8f'",
 "bytes in range 80-9f: '\\x80-\\x9f'",
@@ -255,6 +254,16 @@ unsigned char allowed[n_expectations][MAXBYTE] = {
  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
  },
 /* in_literal */
+{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+ },
+/* in_surrogate_pair */
 {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
