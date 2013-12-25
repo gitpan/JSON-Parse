@@ -9,8 +9,6 @@ lib/JSON/Parse.pod
 Makefile.PL
 MANIFEST			This list of files
 MANIFEST.SKIP
-randmakefile
-random.json
 README
 script/validjson
 t/array.t
