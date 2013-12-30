@@ -1,5 +1,6 @@
 Changes
 errors.c
+FILES
 Json3-common.c
 Json3-entry-points.c
 Json3-perl.c
@@ -27,7 +28,6 @@ t/whitespace.t
 unicode.c
 unicode.h
 utf8-byte-one.c
-utf8-bytes.c
 utf8-next-byte.c
 META.yml                                 Module YAML meta-data (added by MakeMaker)
 META.json                                Module JSON meta-data (added by MakeMaker)

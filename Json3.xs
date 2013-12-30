@@ -2,7 +2,8 @@
 #include "perl.h"
 #include "XSUB.h"
 
-/* TESTRANDOM should never be defined in the code released to CPAN. */
+/* TESTRANDOM should never be defined in the code released to
+   CPAN. This is tested in "xt/testrandom-invalid.t". */
 
 //#define TESTRANDOM
 
@@ -35,7 +36,7 @@ static SV * json_null;
 
 MODULE=JSON::Parse PACKAGE=JSON::Parse
 
-PROTOTYPES: ENABLE
+PROTOTYPES: DISABLE
 
 BOOT:
 {

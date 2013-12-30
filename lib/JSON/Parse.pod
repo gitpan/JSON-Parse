@@ -81,8 +81,9 @@ returned:
 
 This is exactly the same as L</parse_json> except that it reads the
 JSON from the specified file rather than a scalar. The file must be in
-the UTF-8 encoding, and is opened as a character file using the
-":encoding(utf8)" pragma. The output is marked as character strings.
+the UTF-8 encoding, and is opened as a character file using
+C<:encoding(UTF-8)> (see L<PerlIO::encoding> and L<perluniintro> for
+details). The output is marked as character strings.
 
 =head2 valid_json
 
@@ -120,18 +121,6 @@ same high speed, but throws an error if the JSON is wrong, rather than
 returning 1 or 0. See L</DIAGNOSTICS> for the error format, which is
 identical to L</parse_json>.
 
-If you send it uninitialized input it will print a warning message:
-
-     use warnings;
-     my $undef = undef;
-     assert_valid_json ($undef);
-     # "Use of uninitialized value in subroutine entry"
-
-If you call it with an empty argument you will get a compile-time error:
-
-     assert_valid_json ();
-     # "Not enough arguments for JSON::Parse::assert_valid_json"
-
 =head1 OLD INTERFACE
 
 The following alternative function names are accepted. These are the
@@ -157,7 +146,7 @@ floating point numbers, or possibly strings containing the number if
 parsing of a number by the usual methods fails somehow.
 
 JSON does not allow leading zeros, or leading plus signs, so numbers
-like I<+100> or I<0123> cause an L<Unexpected character> error. JSON
+like I<+100> or I<0123> cause an L</Unexpected character> error. JSON
 also does not allow numbers of the form I<1.> but it does allow things
 like I<0e0> or I<1E999999>. As far as possible these are accepted by
 JSON::Parse.
@@ -329,7 +318,8 @@ module. For example, for the UTF-16 format,
     my $input_utf8 = decode ('UTF-16', $input);
     my $perl = parse_json ($input_utf8);
 
-or, for a file,
+or, for a file, use C<:encoding> (see L<PerlIO::encoding> and
+L<perluniintro>):
 
     open my $input, "<:encoding(UTF-16)", 'some-json-file'; 
 
@@ -371,11 +361,11 @@ The following error messages are produced:
 =head2 Unexpected character
 
 
-An unexpected character was encountered in the input. For example,
-when looking at the beginning of a string supposedly containing JSON,
-there are six possible characters, the four JSON whitespace characters
-plus "[" and "{". If the module encounters a plus sign, it will give
-an error like this:
+An unexpected character (byte) was encountered in the input. For
+example, when looking at the beginning of a string supposedly
+containing JSON, there are six possible characters, the four JSON
+whitespace characters plus "[" and "{". If the module encounters a
+plus sign, it will give an error like this:
 
     validate_json ('+');
 
@@ -418,7 +408,7 @@ and the missing second half of a surrogate pair:
 
 gives output
 
-    JSON error at line 1, byte 9/44: Unexpected character '?' parsing string starting from byte 5: expecting '\' 
+    JSON error at line 1, byte 9/44: Unexpected character '?' parsing unicode escape starting from byte 3: expecting '\' 
 
 
 
@@ -450,13 +440,42 @@ C<[0]>, dot: C<[0.1]>, or exponential: C<[0e0]>.
 These are all handled by this error.  Thus the error messages are a
 little confusing as diagnostics.
 
-Previous versions of this module gave more informative messages like
-"leading zero in number". (The messages weren't documented.) The
+Versions of this module prior to 0.29 gave more informative messages
+like "leading zero in number". (The messages weren't documented.) The
 reason to change over to the single message was because it makes the
 parsing code simpler, and because the testing code described in
 L</TESTING> makes use of the internals of this error to check that the
 error message produced actually do correspond to the invalid and valid
 bytes allowed by the parser, at the exact byte given.
+
+This is a bytewise error, thus for example if a miscoded UTF-8 appears
+in the input, an error message saying what bytes would be valid at
+that point will be printed.
+
+    
+    no utf8;
+    use JSON::Parse 'assert_valid_json';
+    
+    # Error in first byte:
+    
+    my $bad_utf8_1 = chr (hex ("81"));
+    eval { assert_valid_json ("[\"$bad_utf8_1\"]"); };
+    print "$@\n";
+    
+    # Error in third byte:
+    
+    my $bad_utf8_2 = chr (hex ('e2')) . chr (hex ('9C')) . 'b';
+    eval { assert_valid_json ("[\"$bad_utf8_2\"]"); };
+    print "$@\n";
+
+
+prints
+
+    JSON error at line 1, byte 3/5: Unexpected character 0x81 parsing string starting from byte 2: expecting printable ASCII or first byte of UTF-8: '\x20-\x7f', '\xC2-\xF4' at examples/bad-utf8.pl line 10.
+    
+    JSON error at line 1, byte 5/7: Unexpected character 'b' parsing string starting from byte 2: expecting bytes in range 80-bf: '\x80-\xbf' at examples/bad-utf8.pl line 16.
+    
+
 
 
 
@@ -628,6 +647,11 @@ JSON::XS.
 =item RFC 4627
 
 JSON is specified in L<RFC 4627 "The application/json Media Type for JavaScript Object Notation (JSON)"|http://www.ietf.org/rfc/rfc4627.txt>.
+
+=item json.org
+
+L<http://json.org> is the website for JSON, authored by Douglas
+Crockford.
 
 =item JSON, JSON::XS, and friends
 

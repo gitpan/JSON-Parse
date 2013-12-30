@@ -1,5 +1,3 @@
-#include "utf8-bytes.c"
-
 /* These things are common between the validation and the parsing
    routines. This is #included into "Json3.xs". */
 
@@ -74,6 +72,75 @@
 #define UHEX  'A': case 'B': case 'C': case 'D': case 'E': case 'F'
 #define LHEX  'a': case 'b': case 'c': case 'd': case 'e': case 'f'
 
+/* UTF-8 switches. */
+
+/* This excludes '"' and '\'. */
+
+#define BYTE_20_7F \
+      0x20: case 0x21:\
+ case 0x23: case 0x24: case 0x25: case 0x26: case 0x27: case 0x28: case 0x29:\
+ case 0x2A: case 0x2B: case 0x2C: case 0x2D: case 0x2E: case 0x2F: case 0x30:\
+ case 0x31: case 0x32: case 0x33: case 0x34: case 0x35: case 0x36: case 0x37:\
+ case 0x38: case 0x39: case 0x3A: case 0x3B: case 0x3C: case 0x3D: case 0x3E:\
+ case 0x3F: case 0x40: case 0x41: case 0x42: case 0x43: case 0x44: case 0x45:\
+ case 0x46: case 0x47: case 0x48: case 0x49: case 0x4A: case 0x4B: case 0x4C:\
+ case 0x4D: case 0x4E: case 0x4F: case 0x50: case 0x51: case 0x52: case 0x53:\
+ case 0x54: case 0x55: case 0x56: case 0x57: case 0x58: case 0x59: case 0x5A:\
+ case 0x5B: case 0x5D: case 0x5E: case 0x5F: case 0x60: case 0x61:\
+ case 0x62: case 0x63: case 0x64: case 0x65: case 0x66: case 0x67: case 0x68:\
+ case 0x69: case 0x6A: case 0x6B: case 0x6C: case 0x6D: case 0x6E: case 0x6F:\
+ case 0x70: case 0x71: case 0x72: case 0x73: case 0x74: case 0x75: case 0x76:\
+ case 0x77: case 0x78: case 0x79: case 0x7A: case 0x7B: case 0x7C: case 0x7D:\
+ case 0x7E: case 0x7F
+#define BYTE_80_8F \
+      0x80: case 0x81: case 0x82: case 0x83: case 0x84: case 0x85: case 0x86:\
+ case 0x87: case 0x88: case 0x89: case 0x8A: case 0x8B: case 0x8C: case 0x8D:\
+ case 0x8E: case 0x8F
+#define BYTE_80_9F \
+      0x80: case 0x81: case 0x82: case 0x83: case 0x84: case 0x85: case 0x86:\
+ case 0x87: case 0x88: case 0x89: case 0x8A: case 0x8B: case 0x8C: case 0x8D:\
+ case 0x8E: case 0x8F: case 0x90: case 0x91: case 0x92: case 0x93: case 0x94:\
+ case 0x95: case 0x96: case 0x97: case 0x98: case 0x99: case 0x9A: case 0x9B:\
+ case 0x9C: case 0x9D: case 0x9E: case 0x9F
+#define BYTE_80_BF \
+      0x80: case 0x81: case 0x82: case 0x83: case 0x84: case 0x85: case 0x86:\
+ case 0x87: case 0x88: case 0x89: case 0x8A: case 0x8B: case 0x8C: case 0x8D:\
+ case 0x8E: case 0x8F: case 0x90: case 0x91: case 0x92: case 0x93: case 0x94:\
+ case 0x95: case 0x96: case 0x97: case 0x98: case 0x99: case 0x9A: case 0x9B:\
+ case 0x9C: case 0x9D: case 0x9E: case 0x9F: case 0xA0: case 0xA1: case 0xA2:\
+ case 0xA3: case 0xA4: case 0xA5: case 0xA6: case 0xA7: case 0xA8: case 0xA9:\
+ case 0xAA: case 0xAB: case 0xAC: case 0xAD: case 0xAE: case 0xAF: case 0xB0:\
+ case 0xB1: case 0xB2: case 0xB3: case 0xB4: case 0xB5: case 0xB6: case 0xB7:\
+ case 0xB8: case 0xB9: case 0xBA: case 0xBB: case 0xBC: case 0xBD: case 0xBE:\
+ case 0xBF
+#define BYTE_90_BF \
+      0x90: case 0x91: case 0x92: case 0x93: case 0x94: case 0x95: case 0x96:\
+ case 0x97: case 0x98: case 0x99: case 0x9A: case 0x9B: case 0x9C: case 0x9D:\
+ case 0x9E: case 0x9F: case 0xA0: case 0xA1: case 0xA2: case 0xA3: case 0xA4:\
+ case 0xA5: case 0xA6: case 0xA7: case 0xA8: case 0xA9: case 0xAA: case 0xAB:\
+ case 0xAC: case 0xAD: case 0xAE: case 0xAF: case 0xB0: case 0xB1: case 0xB2:\
+ case 0xB3: case 0xB4: case 0xB5: case 0xB6: case 0xB7: case 0xB8: case 0xB9:\
+ case 0xBA: case 0xBB: case 0xBC: case 0xBD: case 0xBE: case 0xBF
+#define BYTE_A0_BF \
+      0xA0: case 0xA1: case 0xA2: case 0xA3: case 0xA4: case 0xA5: case 0xA6:\
+ case 0xA7: case 0xA8: case 0xA9: case 0xAA: case 0xAB: case 0xAC: case 0xAD:\
+ case 0xAE: case 0xAF: case 0xB0: case 0xB1: case 0xB2: case 0xB3: case 0xB4:\
+ case 0xB5: case 0xB6: case 0xB7: case 0xB8: case 0xB9: case 0xBA: case 0xBB:\
+ case 0xBC: case 0xBD: case 0xBE: case 0xBF
+#define BYTE_C2_DF \
+      0xC2: case 0xC3: case 0xC4: case 0xC5: case 0xC6: case 0xC7: case 0xC8:\
+ case 0xC9: case 0xCA: case 0xCB: case 0xCC: case 0xCD: case 0xCE: case 0xCF:\
+ case 0xD0: case 0xD1: case 0xD2: case 0xD3: case 0xD4: case 0xD5: case 0xD6:\
+ case 0xD7: case 0xD8: case 0xD9: case 0xDA: case 0xDB: case 0xDC: case 0xDD:\
+ case 0xDE: case 0xDF
+#define BYTE_E1_EC \
+      0xE1: case 0xE2: case 0xE3: case 0xE4: case 0xE5: case 0xE6: case 0xE7:\
+ case 0xE8: case 0xE9: case 0xEA: case 0xEB: case 0xEC
+#define BYTE_EE_EF \
+      0xEE: case 0xEF
+#define BYTE_F1_F3 \
+      0xF1: case 0xF2: case 0xF3
+
 /* A "string_t" is a pointer into the input, which lives in
    "parser->input". The "string_t" structure is used for copying
    strings when the string does not contain any escapes. When a string
@@ -117,6 +184,8 @@ const char * type_names[json_overflow] = {
     "unicode escape"
 };
 
+/* The maximum value of bytes to check for. */
+
 #define MAXBYTE 0x100
 
 #include "errors.c"
@@ -124,9 +193,6 @@ const char * type_names[json_overflow] = {
 /* Anything which could be the start of a value. */
 
 #define VALUE_START (XARRAYOBJECTSTART|XSTRING_START|XDIGIT|XMINUS|XLITERAL)
-
-/* The maximum value of bytes to check for. Once UTF-8 is included in
-   the module, this will change to 0x100. */
 
 typedef struct parser {
 
@@ -289,7 +355,26 @@ static void make_valid_bytes (parser_t * parser)
 
 /* Repeated arguments to snprintf. */
 
-#define SNARGS buffer + string_end, ERRORMSGBUFFERSIZE - string_end
+#define SNEND buffer + string_end
+#define SNSIZE ERRORMSGBUFFERSIZE - string_end
+/*
+
+Disabled due to clash with Darwin compiler:
+
+http://www.cpantesters.org/cpan/report/7c69e0f0-70c0-11e3-95aa-bcf4d95af652
+http://www.cpantesters.org/cpan/report/6cde36da-6fd1-11e3-946f-2b87da5af652
+
+#define SNEND, SNSIZE buffer + string_end, ERRORMSGBUFFERSIZE - string_end
+
+*/
+
+#define EROVERFLOW							\
+    if (string_end >= ERRORMSGBUFFERSIZE - 0x100) {			\
+	failbug (__FILE__, __LINE__, parser,				\
+		 "Error string length is %d"				\
+		 " of maximum %d. Bailing out.",			\
+		 string_end, ERRORMSGBUFFERSIZE);			\
+    }
 
 /* Coming in to this routine, we have checked the error for validity
    and converted at failbadinput. If this is called directly the bug
@@ -306,7 +391,7 @@ failbadinput_json (parser_t * parser)
 
     string_end = 0;
     string_end +=
-	snprintf (SNARGS,
+	snprintf (SNEND, SNSIZE,
 		  "{"
 		  "\"input length\":%d"
 		  ",\"bad type\":\"%s\""
@@ -314,31 +399,38 @@ failbadinput_json (parser_t * parser)
 		  parser->length,
 		  type_names[parser->bad_type],
 		  json_errors[parser->error]);
+    EROVERFLOW;
     if (parser->bad_byte) {
-	string_end += snprintf (SNARGS,
+	string_end += snprintf (SNEND, SNSIZE,
 				",\"bad byte position\":%d"
 				",\"bad byte contents\":%d",
 				parser->bad_byte - parser->input,
 				* parser->bad_byte);
+	EROVERFLOW;
     }
     if (parser->bad_beginning) {
 	string_end +=
-	    snprintf (SNARGS, ",\"start of broken component\":%d",
+	    snprintf (SNEND, SNSIZE, ",\"start of broken component\":%d",
 		      parser->bad_beginning - parser->input + 1);
+	EROVERFLOW;
     }
     if (parser->error == json_error_unexpected_character) {
 	int j;
 	make_valid_bytes (parser);
 	string_end +=
-	    snprintf (SNARGS, ",\"valid bytes\":[%d",
+	    snprintf (SNEND, SNSIZE, ",\"valid bytes\":[%d",
 		      parser->valid_bytes[0]);
+	EROVERFLOW;
 	for (j = 1; j < MAXBYTE; j++) {
-	    string_end += snprintf (SNARGS, ",%d",
+	    string_end += snprintf (SNEND, SNSIZE, ",%d",
 				    parser->valid_bytes[j]);
 	}
-	string_end += snprintf (SNARGS, "]");
+	EROVERFLOW;
+	string_end += snprintf (SNEND, SNSIZE, "]");
+	EROVERFLOW;
     }
-    string_end += snprintf (SNARGS, "}\n");
+    string_end += snprintf (SNEND, SNSIZE, "}\n");
+    EROVERFLOW;
     croak (buffer);
 }
 
@@ -435,11 +527,13 @@ failbadinput (parser_t * parser)
 
 	if (bb >= 0x20 && bb < 0x7F) {
 	    /* Printable character, print the character itself. */
-	    string_end += snprintf (SNARGS, " '%c'", bb);
+	    string_end += snprintf (SNEND, SNSIZE, " '%c'", bb);
+	    EROVERFLOW;
 	}
 	else {
 	    /* Unprintable character, print its hexadecimal value. */
-	    string_end += snprintf (SNARGS, " 0x%02x", bb);
+	    string_end += snprintf (SNEND, SNSIZE, " 0x%02x", bb);
+	    EROVERFLOW;
 	}
     }
     /* "parser->bad_type" contains what was being parsed when the
@@ -450,11 +544,13 @@ failbadinput (parser_t * parser)
 		 "parsing type set to invalid value %d in error message",
 		 parser->bad_type);
     }
-    string_end += snprintf (SNARGS, " parsing %s",
+    string_end += snprintf (SNEND, SNSIZE, " parsing %s",
 			    type_names[parser->bad_type]);
+    EROVERFLOW;
     if (parser->bad_beginning) {
-	string_end += snprintf (SNARGS, " starting from byte %d",
+	string_end += snprintf (SNEND, SNSIZE, " starting from byte %d",
 				parser->bad_beginning - parser->input + 1);
+	EROVERFLOW;
     }
 
     /* "parser->expected" is set for the "unexpected character" error
@@ -469,22 +565,17 @@ failbadinput (parser_t * parser)
 	    unsigned char bb;
 	    bb = * parser->bad_byte;
 
-	    string_end += snprintf (SNARGS, ": expecting ");
+	    string_end += snprintf (SNEND, SNSIZE, ": expecting ");
+	    EROVERFLOW;
 	    joined = 0;
-#ifdef TESTRANDOM
-	    for (i = 0; i < MAXBYTE; i++) {
-		parser->valid_bytes[i] = 0;
-	    }
-#endif /* def TESTRANDOM */
+
 	    if (SPECIFIC(parser->expected)) {
 		if (! parser->literal_char) {
 		    failbug (__FILE__, __LINE__, parser,
 			     "expected literal character unset");
 		}
-		snprintf (SNARGS, "'%c'", parser->literal_char);
-#ifdef TESTRANDOM
-		parser->valid_bytes[parser->literal_char] = 1;
-#endif /* def TESTRANDOM */
+		string_end += snprintf (SNEND, SNSIZE, "'%c'", parser->literal_char);
+		EROVERFLOW;
 	    }
 	    for (i = 0; i < n_expectations; i++) {
 		int X;
@@ -493,24 +584,6 @@ failbadinput (parser_t * parser)
 		    continue;
 		}
 		if (parser->expected & X) {
-#ifdef TESTRANDOM
-		    int j;
-		    for (j = 0; j < MAXBYTE; j++) {
-#if 0
-			/* This is to check we have meaningful stuff
-			   in the valid/invalid table. */
-			if (parser->randomtest) {
-			    printf ("%d", allowed[i][j]);
-			}
-#endif /* 0 */
-			parser->valid_bytes[j] |= allowed[i][j];
-		    }
-#if 0
-		    if (parser->randomtest) {
-			printf ("\n");
-		    }
-#endif /* 0 */
-#endif /* def TESTRANDOM */
 
 		    /* Check that this really is disallowed. */
 		    
@@ -524,9 +597,11 @@ failbadinput (parser_t * parser)
 			}
 		    }
 		    if (joined) {
-			string_end += snprintf (SNARGS, " or ");
+			string_end += snprintf (SNEND, SNSIZE, " or ");
+			EROVERFLOW;
 		    }
-		    string_end += snprintf (SNARGS, "%s", input_expectation[i]);
+		    string_end += snprintf (SNEND, SNSIZE, "%s", input_expectation[i]);
+		    EROVERFLOW;
 		    joined = 1;
 		}
 	    }
@@ -544,7 +619,8 @@ failbadinput (parser_t * parser)
 		 parser->bad_byte - parser->input);
     }
 
-#undef SNARGS
+#undef SNEND
+#undef SNSIZE
 
 #ifdef TESTRANDOM
 
@@ -552,6 +628,7 @@ failbadinput (parser_t * parser)
 
     if (parser->randomtest) {
 	parser->last_error = buffer;
+	make_valid_bytes (parser);
 	longjmp (parser->biscuit, 1);
     }
 
@@ -581,7 +658,8 @@ failbadinput (parser_t * parser)
 #undef SPECIFIC
 
 /* This is for failures not due to errors in the input or to bugs but
-   to exhaustion of resources, i.e. out of memory. */
+   to exhaustion of resources, i.e. out of memory, or file errors
+   would go here if there were any C file opening things anywhere. */
 
 static INLINE void failresources (parser_t * parser, const char * format, ...)
 {
@@ -922,6 +1000,7 @@ get_key_string (parser_t * parser, string_t * key)
 
 #define ADDBYTE 
 #define string_start key_string_next
+#define startofutf8string (key->start)
 #include "utf8-byte-one.c"
     default:
 
@@ -934,6 +1013,7 @@ get_key_string (parser_t * parser, string_t * key)
     return;
 
 #include "utf8-next-byte.c"
+#undef startofutf8string
 #undef string_start
 #undef ADDBYTE
 }
@@ -988,6 +1068,7 @@ get_string (parser_t * parser)
 	goto string_start;
 
 #define ADDBYTE (* b++ = c)
+#define startofutf8string start
 #include "utf8-byte-one.c"
 
     default:
