@@ -367,11 +367,11 @@ containing JSON, there are six possible characters, the four JSON
 whitespace characters plus "[" and "{". If the module encounters a
 plus sign, it will give an error like this:
 
-    validate_json ('+');
+    assert_valid_json ('+');
 
 gives output
 
-    JSON error at line 1, byte 1/1: Unexpected character '+' parsing initial state: expecting whitespace: '\n', '\r', '\t', ' ' or start of an array or object: '{', '[' 
+    Undefined subroutine &main::validate_json called 
 
 
 
@@ -381,11 +381,11 @@ If there is some recognizable structure being parsed, the error
 message will include its starting point in the form "starting from
 byte n":
 
-    validate_json ('{"this":"\a"}');
+    assert_valid_json ('{"this":"\a"}');
 
 gives output
 
-    JSON error at line 1, byte 11/13: Unexpected character 'a' parsing string starting from byte 9: expecting escape: '\', '/', '"', 'b', 'f', 'n', 'r', 't', 'u' 
+    Undefined subroutine &main::validate_json called 
 
 
 
@@ -394,42 +394,42 @@ examined at a time. Thus almost all parsing problems can be handled
 using the "Unexpected character" error type, including spelling errors
 in literals:
 
-    validate_json ('[true,folse]');
+    assert_valid_json ('[true,folse]');
 
 gives output
 
-    JSON error at line 1, byte 8/12: Unexpected character 'o' parsing literal starting from byte 7: expecting 'a' 
+    Undefined subroutine &main::validate_json called 
 
 
 
 and the missing second half of a surrogate pair:
 
-    validate_json ('["\udc00? <-- should be a second half here"]');
+    assert_valid_json ('["\udc00? <-- should be a second half here"]');
 
 gives output
 
-    JSON error at line 1, byte 9/44: Unexpected character '?' parsing unicode escape starting from byte 3: expecting '\' 
+    Undefined subroutine &main::validate_json called 
 
 
 
 All kinds of errors can occur parsing numbers, for example a missing
 fraction,
 
-    validate_json ('[1.e9]');
+    assert_valid_json ('[1.e9]');
 
 gives output
 
-    JSON error at line 1, byte 4/6: Unexpected character 'e' parsing number starting from byte 2: expecting digit: '0-9' 
+    Undefined subroutine &main::validate_json called 
 
 
 
 and a leading zero,
 
-    validate_json ('[0123]');
+    assert_valid_json ('[0123]');
 
 gives output
 
-    JSON error at line 1, byte 3/6: Unexpected character '1' parsing number starting from byte 2: expecting whitespace: '\n', '\r', '\t', ' ' or comma: ',' or end of array: ']' or dot: '.' or exponential sign: 'e', 'E' 
+    Undefined subroutine &main::validate_json called 
 
 
 
@@ -489,11 +489,11 @@ The end of the string was encountered before the end of whatever was
 being parsed was. For example, if a quote is missing from the end of
 the string, it will give an error like this:
 
-    validate_json ('{"first":"Suzuki","second":"Murakami","third":"Asada}');
+    assert_valid_json ('{"first":"Suzuki","second":"Murakami","third":"Asada}');
 
 gives output
 
-    JSON error at line 1: Unexpected end of input parsing string starting from byte 47 
+    Undefined subroutine &main::validate_json called 
 
 
 
@@ -509,11 +509,11 @@ While parsing a string, a surrogate pair was encountered. While trying
 to turn this into UTF-8, the second half of the surrogate pair turned
 out to be an invalid value.
 
-    validate_json ('["\uDC00\uABCD"]');
+    assert_valid_json ('["\uDC00\uABCD"]');
 
 gives output
 
-    JSON error at line 1: Not surrogate pair parsing unicode escape starting from byte 11 
+    Undefined subroutine &main::validate_json called 
 
 
 

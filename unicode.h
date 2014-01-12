@@ -18,24 +18,24 @@
 #line 20 "unicode.c"
 int utf8_to_ucs2 (const unsigned char * input , const unsigned char ** end_ptr );
 
-#line 64 "unicode.c"
+#line 59 "unicode.c"
 int ucs2_to_utf8 (int ucs2 , unsigned char * utf8 );
 
-#line 102 "unicode.c"
-int surrogate_to_utf8 (int first , int second , unsigned char * utf8 );
+#line 97 "unicode.c"
+int surrogate_to_utf8 (int hi , int lo , unsigned char * utf8 );
 
-#line 122 "unicode.c"
+#line 120 "unicode.c"
 int unicode_chars_to_bytes (const unsigned char * utf8 , int n_chars );
 
-#line 141 "unicode.c"
+#line 139 "unicode.c"
 int unicode_count_chars (const unsigned char * utf8 );
 
-#line 165 "unicode.c"
+#line 163 "unicode.c"
 
 #ifdef TEST
 void print_bytes (const unsigned char * bytes );
 
-#line 175 "unicode.c"
+#line 173 "unicode.c"
 void test_ucs2_to_utf8 (const unsigned char * input );
 
 #endif /* def TEST */
