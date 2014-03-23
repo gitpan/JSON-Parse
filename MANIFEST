@@ -4,7 +4,6 @@ FILES
 json-common.c
 json-entry-points.c
 json-perl.c
-json-random-test.c
 json-whitespace.c
 Json3.xs
 lib/JSON/Parse.pm

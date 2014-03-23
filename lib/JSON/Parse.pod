@@ -371,7 +371,7 @@ plus sign, it will give an error like this:
 
 gives output
 
-    Undefined subroutine &main::validate_json called 
+    JSON error at line 1, byte 1/1: Unexpected character '+' parsing initial state: expecting whitespace: '\n', '\r', '\t', ' ' or start of an array or object: '{', '[' 
 
 
 
@@ -385,7 +385,7 @@ byte n":
 
 gives output
 
-    Undefined subroutine &main::validate_json called 
+    JSON error at line 1, byte 11/13: Unexpected character 'a' parsing string starting from byte 9: expecting escape: '\', '/', '"', 'b', 'f', 'n', 'r', 't', 'u' 
 
 
 
@@ -398,7 +398,7 @@ in literals:
 
 gives output
 
-    Undefined subroutine &main::validate_json called 
+    JSON error at line 1, byte 8/12: Unexpected character 'o' parsing literal starting from byte 7: expecting 'a' 
 
 
 
@@ -408,7 +408,7 @@ and the missing second half of a surrogate pair:
 
 gives output
 
-    Undefined subroutine &main::validate_json called 
+    JSON error at line 1, byte 9/44: Unexpected character '?' parsing unicode escape starting from byte 3: expecting '\' 
 
 
 
@@ -419,7 +419,7 @@ fraction,
 
 gives output
 
-    Undefined subroutine &main::validate_json called 
+    JSON error at line 1, byte 4/6: Unexpected character 'e' parsing number starting from byte 2: expecting digit: '0-9' 
 
 
 
@@ -429,7 +429,7 @@ and a leading zero,
 
 gives output
 
-    Undefined subroutine &main::validate_json called 
+    JSON error at line 1, byte 3/6: Unexpected character '1' parsing number starting from byte 2: expecting whitespace: '\n', '\r', '\t', ' ' or comma: ',' or end of array: ']' or dot: '.' or exponential sign: 'e', 'E' 
 
 
 
@@ -493,7 +493,7 @@ the string, it will give an error like this:
 
 gives output
 
-    Undefined subroutine &main::validate_json called 
+    JSON error at line 1: Unexpected end of input parsing string starting from byte 47 
 
 
 
@@ -513,7 +513,7 @@ out to be an invalid value.
 
 gives output
 
-    Undefined subroutine &main::validate_json called 
+    JSON error at line 1: Not surrogate pair parsing unicode escape starting from byte 11 
 
 
 
@@ -717,13 +717,13 @@ More extensive testing code is in the git repository. This is not
 supplied in the CPAN distribution. A script, F<randomjson.pl>,
 generates a set number of bytes of random JSON and checks that the
 module's bytewise validation of input is correct. This setup relies on
-a C file F<Json3-random-test.c> which isn't in the CPAN distribution,
+a C file F<json-random-test.c> which isn't in the CPAN distribution,
 and it also requires F<Json3.xs> to be edited to make the macro
 C<TESTRANDOM> true (uncomment line 7 of the file). The testing code
 uses C setjmp/longjmp, so it's not guaranteed to work on all operating
 systems and is commented out for CPAN releases.
 
-A pure C version called "random-test.c" also exists. This applies
+A pure C version called F<random-test.c> also exists. This applies
 exactly the same tests, and requires no Perl at all.
 
 =head1 AUTHOR
