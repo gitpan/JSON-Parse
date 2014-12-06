@@ -15,7 +15,7 @@ require Exporter;
 use warnings;
 use strict;
 use Carp;
-our $VERSION = '0.30';
+our $VERSION = '0.30_01';
 require XSLoader;
 XSLoader::load (__PACKAGE__, $VERSION);
 
@@ -23,14 +23,9 @@ XSLoader::load (__PACKAGE__, $VERSION);
 
 our $json_diagnostics;
 
-# JSON literals all point to these. They're set to read-only within
-# the XS.
-
 our $true;
 our $false;
 our $null;
-
-# Old names of subroutines.
 
 sub json_to_perl
 {
@@ -49,7 +44,7 @@ sub valid_json
 	return 0;
     }
     eval {
-	assert_valid_json (@_);
+	validate_json (@_);
     };
     if ($@) {
 	return 0;

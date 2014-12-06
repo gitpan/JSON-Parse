@@ -3,24 +3,23 @@ abstract: 'Read JSON into a Perl variable'
 author:
   - 'Ben Bullock <bkb@cpan.org>'
 build_requires:
-  ExtUtils::MakeMaker: '0'
+  ExtUtils::MakeMaker: 0
 configure_requires:
-  ExtUtils::MakeMaker: '0'
+  ExtUtils::MakeMaker: 0
 dynamic_config: 1
-generated_by: 'ExtUtils::MakeMaker version 6.9, CPAN::Meta::Converter version 2.133380'
+generated_by: 'ExtUtils::MakeMaker version 6.98, CPAN::Meta::Converter version 2.120921'
 license: perl
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html
-  version: '1.4'
+  version: 1.4
 name: JSON-Parse
 no_index:
   directory:
     - t
     - inc
 requires:
-  perl: '5.008009'
+  perl: 5.008009
 resources:
   bugtracker: https://github.com/benkasminbullock/JSON-Parse/issues
-  homepage: https://groups.google.com/forum/#!forum/json-parse
   repository: git://github.com/benkasminbullock/JSON-Parse.git
-version: '0.30'
+version: 0.30_01

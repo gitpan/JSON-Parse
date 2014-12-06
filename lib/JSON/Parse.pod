@@ -360,14 +360,13 @@ The following error messages are produced:
 
 =head2 Unexpected character
 
-
 An unexpected character (byte) was encountered in the input. For
 example, when looking at the beginning of a string supposedly
 containing JSON, there are six possible characters, the four JSON
 whitespace characters plus "[" and "{". If the module encounters a
 plus sign, it will give an error like this:
 
-    assert_valid_json ('+');
+    validate_json ('+');
 
 gives output
 
@@ -381,7 +380,7 @@ If there is some recognizable structure being parsed, the error
 message will include its starting point in the form "starting from
 byte n":
 
-    assert_valid_json ('{"this":"\a"}');
+    validate_json ('{"this":"\a"}');
 
 gives output
 
@@ -394,7 +393,7 @@ examined at a time. Thus almost all parsing problems can be handled
 using the "Unexpected character" error type, including spelling errors
 in literals:
 
-    assert_valid_json ('[true,folse]');
+    validate_json ('[true,folse]');
 
 gives output
 
@@ -404,7 +403,7 @@ gives output
 
 and the missing second half of a surrogate pair:
 
-    assert_valid_json ('["\udc00? <-- should be a second half here"]');
+    validate_json ('["\udc00? <-- should be a second half here"]');
 
 gives output
 
@@ -415,7 +414,7 @@ gives output
 All kinds of errors can occur parsing numbers, for example a missing
 fraction,
 
-    assert_valid_json ('[1.e9]');
+    validate_json ('[1.e9]');
 
 gives output
 
@@ -425,7 +424,7 @@ gives output
 
 and a leading zero,
 
-    assert_valid_json ('[0123]');
+    validate_json ('[0123]');
 
 gives output
 
@@ -480,16 +479,13 @@ prints
 
 
 
-
-
 =head2 Unexpected end of input
-
 
 The end of the string was encountered before the end of whatever was
 being parsed was. For example, if a quote is missing from the end of
 the string, it will give an error like this:
 
-    assert_valid_json ('{"first":"Suzuki","second":"Murakami","third":"Asada}');
+    validate_json ('{"first":"Suzuki","second":"Murakami","third":"Asada}');
 
 gives output
 
@@ -500,16 +496,13 @@ gives output
 
 
 
-
-
 =head2 Not surrogate pair
-
 
 While parsing a string, a surrogate pair was encountered. While trying
 to turn this into UTF-8, the second half of the surrogate pair turned
 out to be an invalid value.
 
-    assert_valid_json ('["\uDC00\uABCD"]');
+    validate_json ('["\uDC00\uABCD"]');
 
 gives output
 
@@ -520,16 +513,11 @@ gives output
 
 
 
-
-
 =head2 Empty input
-
 
 This error occurs for L</assert_valid_json> when it's given an empty
 or undefined value. Given empty input, L</parse_json> returns an
 undefined value rather than throwing an error.
-
-
 
 
 
@@ -698,14 +686,6 @@ All of the functions can be exported using the tag ':all':
 
     use JSON::Parse ':all';
 
-=head1 SUPPORT
-
-There is a mailing list at <json-parse@googlegroups.com> for
-announcements and discussions about the module. You can read it on the
-web at
-L<https://groups.google.com/forum/#!forum/json-parse>. Membership is
-open to anyone.
-
 =head1 TESTING
 
 The module incorporates extensive testing related to the production of
@@ -717,13 +697,13 @@ More extensive testing code is in the git repository. This is not
 supplied in the CPAN distribution. A script, F<randomjson.pl>,
 generates a set number of bytes of random JSON and checks that the
 module's bytewise validation of input is correct. This setup relies on
-a C file F<json-random-test.c> which isn't in the CPAN distribution,
+a C file F<Json3-random-test.c> which isn't in the CPAN distribution,
 and it also requires F<Json3.xs> to be edited to make the macro
 C<TESTRANDOM> true (uncomment line 7 of the file). The testing code
 uses C setjmp/longjmp, so it's not guaranteed to work on all operating
 systems and is commented out for CPAN releases.
 
-A pure C version called F<random-test.c> also exists. This applies
+A pure C version called "random-test.c" also exists. This applies
 exactly the same tests, and requires no Perl at all.
 
 =head1 AUTHOR

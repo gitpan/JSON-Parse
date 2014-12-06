@@ -16,7 +16,7 @@
 static SV * json_diagnostics;
 
 /* All instances of JSON literals are pointed to the following. These
-   are initialized in "BOOT" in "json.xs". */
+   are initialized in "BOOT" in "Json3.xs". */
 
 static SV * json_true;
 static SV * json_false;
@@ -24,21 +24,15 @@ static SV * json_null;
 
 #include "unicode.h"
 #include "unicode.c"
-#include "json-common.c"
+#include "Json3-common.c"
 #define PERLING
-#include "json-perl.c"
+#include "Json3-perl.c"
 #undef PERLING
-#define TOKENING
-#include "json-perl.c"
-#undef TOKENING
-#include "json-perl.c"
-#include "json-entry-points.c"
+#include "Json3-perl.c"
+#include "Json3-entry-points.c"
 #ifdef TESTRANDOM
-#include "json-random-test.c"
+#include "Json3-random-test.c"
 #endif /* def TESTRANDOM */
-#include "json-whitespace.c"
-
-typedef json_token_t * JSON__Tokenize;
 
 MODULE=JSON::Parse PACKAGE=JSON::Parse
 
@@ -67,30 +61,6 @@ void assert_valid_json (json)
 	SV * json;
 CODE:
 	validate (json);
-
-MODULE=JSON::Parse PACKAGE=JSON::Tokenize
-
-JSON::Tokenize tokenize_json (json)
-	SV * json;
-CODE:
-	RETVAL = tokenize (json);
-OUTPUT:
-	RETVAL
-
-void DESTROY (tokens)
-	json_token_t * tokens;
-CODE:
-	tokenize_free (tokens);
-
-MODULE=JSON::Parse PACKAGE=JSON::Whitespace
-
-SV * strip_whitespace (tokens, json)
-	JSON::Tokenize tokens;
-	SV * json;
-CODE:
-	RETVAL = strip_whitespace (tokens, json);
-OUTPUT:
-	RETVAL
 
 #ifdef TESTRANDOM
 
