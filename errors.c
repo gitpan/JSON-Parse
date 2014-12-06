@@ -81,7 +81,7 @@ char * input_expectation[n_expectations] = {
 "escape: '\\', '/', '\"', 'b', 'f', 'n', 'r', 't', 'u'",
 "printable ASCII or first byte of UTF-8: '\\x20-\\x7f', '\\xC2-\\xF4'",
 "start of literal: 't', 'f', 'n'",
-"after the start of literal",
+"after the start of true, false, or null",
 "the second half of a surrogate pair",
 "bytes in range 80-8f: '\\x80-\\x8f'",
 "bytes in range 80-9f: '\\x80-\\x9f'",

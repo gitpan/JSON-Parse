@@ -366,7 +366,7 @@ containing JSON, there are six possible characters, the four JSON
 whitespace characters plus "[" and "{". If the module encounters a
 plus sign, it will give an error like this:
 
-    validate_json ('+');
+    assert_valid_json ('+');
 
 gives output
 
@@ -380,7 +380,7 @@ If there is some recognizable structure being parsed, the error
 message will include its starting point in the form "starting from
 byte n":
 
-    validate_json ('{"this":"\a"}');
+    assert_valid_json ('{"this":"\a"}');
 
 gives output
 
@@ -393,7 +393,7 @@ examined at a time. Thus almost all parsing problems can be handled
 using the "Unexpected character" error type, including spelling errors
 in literals:
 
-    validate_json ('[true,folse]');
+    assert_valid_json ('[true,folse]');
 
 gives output
 
@@ -403,7 +403,7 @@ gives output
 
 and the missing second half of a surrogate pair:
 
-    validate_json ('["\udc00? <-- should be a second half here"]');
+    assert_valid_json ('["\udc00? <-- should be a second half here"]');
 
 gives output
 
@@ -414,7 +414,7 @@ gives output
 All kinds of errors can occur parsing numbers, for example a missing
 fraction,
 
-    validate_json ('[1.e9]');
+    assert_valid_json ('[1.e9]');
 
 gives output
 
@@ -424,7 +424,7 @@ gives output
 
 and a leading zero,
 
-    validate_json ('[0123]');
+    assert_valid_json ('[0123]');
 
 gives output
 
@@ -485,7 +485,7 @@ The end of the string was encountered before the end of whatever was
 being parsed was. For example, if a quote is missing from the end of
 the string, it will give an error like this:
 
-    validate_json ('{"first":"Suzuki","second":"Murakami","third":"Asada}');
+    assert_valid_json ('{"first":"Suzuki","second":"Murakami","third":"Asada}');
 
 gives output
 
@@ -502,7 +502,7 @@ While parsing a string, a surrogate pair was encountered. While trying
 to turn this into UTF-8, the second half of the surrogate pair turned
 out to be an invalid value.
 
-    validate_json ('["\uDC00\uABCD"]');
+    assert_valid_json ('["\uDC00\uABCD"]');
 
 gives output
 
@@ -650,15 +650,14 @@ particular its exasperating handling of Unicode.
 There are also a lot of other modules for parsing and producing JSON
 on CPAN. I have found the following ones: L<JSON::DWIW>, L<JSON::Any>,
 L<JSON::YAJL>, L<JSON::Util>, L<JSON::Tiny>, L<Pegex::JSON>,
-L<JSON::Streaming::Reader>, L<JSON::Syck>, L<Mojo::JSON>. Please let
-me know of any others I've missed.
+L<JSON::Streaming::Reader>, L<JSON::Syck>, L<Mojo::JSON>,
+L<JSON::SL>. Please let me know of any others I've missed.
 
 A fork of JSON::XS also exists as L<Cpanel::JSON::XS>. This is related
 to a disagreement about how to report bugs. Please see the module for
 details. Another module, L<JSON::XS::VersionOneAndTwo>, supports two
 different interfaces of JSON::XS. However, JSON::XS is now onto
-version 3. L<JSON::SL> also seems to be a fork of JSON::XS. I was
-unable to run its example code.
+version 3.
 
 =back
 
@@ -697,13 +696,13 @@ More extensive testing code is in the git repository. This is not
 supplied in the CPAN distribution. A script, F<randomjson.pl>,
 generates a set number of bytes of random JSON and checks that the
 module's bytewise validation of input is correct. This setup relies on
-a C file F<Json3-random-test.c> which isn't in the CPAN distribution,
+a C file F<json-random-test.c> which isn't in the CPAN distribution,
 and it also requires F<Json3.xs> to be edited to make the macro
 C<TESTRANDOM> true (uncomment line 7 of the file). The testing code
 uses C setjmp/longjmp, so it's not guaranteed to work on all operating
 systems and is commented out for CPAN releases.
 
-A pure C version called "random-test.c" also exists. This applies
+A pure C version called F<random-test.c> also exists. This applies
 exactly the same tests, and requires no Perl at all.
 
 =head1 AUTHOR

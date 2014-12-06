@@ -22,4 +22,4 @@ requires:
 resources:
   bugtracker: https://github.com/benkasminbullock/JSON-Parse/issues
   repository: git://github.com/benkasminbullock/JSON-Parse.git
-version: 0.30_01
+version: 0.30_02
