@@ -1,4 +1,4 @@
-0.30_02 2014-12-06
+0.31 2014-12-07
 
 * Make sure to cast to STRLEN in newSVpv(n) calls.
 * Remove reference to deleted Google Group from documentation.

@@ -36,7 +36,7 @@
          }
       }
    },
-   "release_status" : "testing",
+   "release_status" : "stable",
    "resources" : {
       "bugtracker" : {
          "web" : "https://github.com/benkasminbullock/JSON-Parse/issues"
@@ -47,5 +47,5 @@
          "web" : "https://github.com/benkasminbullock/JSON-Parse"
       }
    },
-   "version" : "0.30_02"
+   "version" : "0.31"
 }
